@@ -60,6 +60,12 @@ export default function InvoiceDetailModal({ invoice, onClose }) {
                 ))}
               </div>
             )}
+            {invoice.taxAmount > 0 && (
+              <div className="flex justify-between text-gray-600">
+                <span>Tax ({invoice.taxPercentage}%)</span>
+                <span>{fmt(invoice.taxAmount)}</span>
+              </div>
+            )}
             <div className="border-t border-gray-200 pt-2 flex justify-between font-semibold text-[#0B1F2A]">
               <span>Total</span>
               <span>{fmt(invoice.totalAmount)}</span>

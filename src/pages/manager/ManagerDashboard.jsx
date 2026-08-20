@@ -59,7 +59,7 @@ export default function ManagerDashboard() {
   return (
     <ManagerLayout>
 
-      {/* ══ ALL BOOKINGS ══════════════════════════════════════════════════════ */}
+      {/* ══ ALL BOOKINGS  */}
       <Section title="All Bookings" icon="📖" count={filteredBookings.length}>
         {/* Filter bar */}
         <div className="px-6 py-3 border-b border-gray-50 flex flex-wrap gap-3 items-center">
@@ -101,7 +101,7 @@ export default function ManagerDashboard() {
                     </th>
                   ))}
                 </tr>
-              </thead>
+              </thead> 
               <tbody>
                 {filteredBookings.length === 0 ? (
                   <tr>
@@ -151,14 +151,14 @@ export default function ManagerDashboard() {
         )}
       </Section>
 
-      {/* ══ MAINTENANCE REQUESTS ══════════════════════════════════════════════ */}
+      {/* ══ MAINTENANCE REQUESTS  */}
       <Section title="Maintenance Requests" icon="🔧">
         <div className="px-0">
           <MaintenanceRequestsView />
         </div>
       </Section>
 
-      {/* ══ ROOM OVERVIEW ═════════════════════════════════════════════════════ */}
+      {/* ══ ROOM OVERVIEW  */}
       <Section
         title="Room Overview"
         icon="🛏️"

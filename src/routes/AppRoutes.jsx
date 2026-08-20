@@ -7,7 +7,6 @@ import Dashboard from "../pages/admin/Dashboard";
 import GuestUsers from "../pages/admin/guestUser/User";
 import AdminRooms from "../pages/admin/rooms/Rooms";
 import AdminBookings from "../pages/admin/bookings/Bookings";
-import Manager from "../pages/manager/ManagerDashboard";
 import Receptionist from "../pages/receptionist/ReceptionDashboard";
 import Housekeeping from "../pages/housekeeping/HouseKeepingDashboard";
 import Rooms from "../pages/public/Rooms";
@@ -20,7 +19,11 @@ import SignelUser from "../components/userProfile/SignelUser"
 import MyBookings from "../pages/user/MyBookings"
 import AdminInvoices    from "../pages/admin/invoices/Invoices"
 import AdminMaintenance  from "../pages/admin/maintenance/Maintenance"
-import ManagerMaintenance from "../pages/manager/maintenance/Maintenance"
+import AdminReports       from "../pages/admin/reports/Reports"
+import AdminFeedback      from "../pages/admin/feedback/Feedback"
+import AdminSettings      from "../pages/admin/settings/Settings"
+
+const STAFF = [ROLES.ADMIN, ROLES.MANAGER];
 
 function AppRoutes() {
   return (
@@ -37,14 +40,68 @@ function AppRoutes() {
       <Route path="/rooms/:id" element={<RoomDetails />} />
       <Route path="/signeuser" element={<SignelUser/>}/>
       <Route path="/my-bookings" element={<ProtectedRoute><MyBookings /></ProtectedRoute>} />
-    
 
-      {/* Admin */}
+      {/* Shared admin + manager routes */}
       <Route
         path="/admin/dashboard"
         element={
-          <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
+          <ProtectedRoute allowedRoles={STAFF}>
             <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/rooms"
+        element={
+          <ProtectedRoute allowedRoles={STAFF}>
+            <AdminRooms />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/bookings"
+        element={
+          <ProtectedRoute allowedRoles={STAFF}>
+            <AdminBookings />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/maintenance"
+        element={
+          <ProtectedRoute allowedRoles={STAFF}>
+            <AdminMaintenance />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/reports"
+        element={
+          <ProtectedRoute allowedRoles={STAFF}>
+            <AdminReports />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/feedback"
+        element={
+          <ProtectedRoute allowedRoles={STAFF}>
+            <AdminFeedback />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Admin-only routes */}
+      <Route
+        path="/admin/settings"
+        element={
+          <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
+            <AdminSettings />
           </ProtectedRoute>
         }
       />
@@ -59,56 +116,10 @@ function AppRoutes() {
       />
 
       <Route
-        path="/admin/rooms"
-        element={
-          <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
-            <AdminRooms />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/admin/bookings"
-        element={
-          <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
-            <AdminBookings />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
         path="/admin/invoices"
         element={
           <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
             <AdminInvoices />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/admin/maintenance"
-        element={
-          <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
-            <AdminMaintenance />
-          </ProtectedRoute>
-        }
-      />
-
-      {/* Manager */}
-      <Route
-        path="/manager/dashboard"
-        element={
-          <ProtectedRoute allowedRoles={[ROLES.MANAGER]}>
-            <Manager/>
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/manager/maintenance"
-        element={
-          <ProtectedRoute allowedRoles={[ROLES.MANAGER]}>
-            <ManagerMaintenance />
           </ProtectedRoute>
         }
       />

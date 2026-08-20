@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import NotificationBell from "../notifications/NotificationBell";
 
 const sidebarLinks = [
   { label: "Dashboard", to: "/housekeeping/dashboard", icon: "🏠" },
@@ -64,6 +65,7 @@ export default function HousekeepingLayout({ children, title }) {
             <h2 className="text-lg font-serif text-[#0B1F2A]">{title || "Dashboard"}</h2>
           </div>
           <div className="flex items-center gap-4">
+            <NotificationBell />
             <span className="text-sm text-gray-600 hidden sm:inline">{user?.name}</span>
             <div className="w-9 h-9 rounded-full bg-[#0B1F2A] text-[#C9A24B] flex items-center justify-center text-sm font-medium">
               {(user?.name || "H").charAt(0).toUpperCase()}

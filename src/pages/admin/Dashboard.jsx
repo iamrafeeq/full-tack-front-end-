@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useAuth } from "../../context/AuthContext";
 import AdminLayout from "../../components/admin/AdminLayout";
 import { fetchBookings } from "../../redux/slice/Booking/bookingSlice";
 import { fetchAllRooms } from "../../redux/slice/roomSlice/roomSlice";
@@ -27,6 +28,7 @@ function StatCard({ title, value, icon, loading }) {
 
 export default function AdminDashboard() {
   const dispatch = useDispatch();
+  const { role } = useAuth();
 
   const { bookings, total: bookingTotal, loading: bookingLoading } =
     useSelector((state) => state.bookings);
@@ -38,8 +40,8 @@ export default function AdminDashboard() {
   useEffect(() => {
     dispatch(fetchBookings());
     dispatch(fetchAllRooms());
-    dispatch(guestUserAPI());
-  }, [dispatch]);
+    if (role === "admin") dispatch(guestUserAPI());
+  }, [dispatch, role]);
 
   // Sum totalAmount of all non-cancelled bookings
   const revenue = bookings
@@ -57,10 +59,12 @@ export default function AdminDashboard() {
   return (
     <AdminLayout>
       {/* Stat cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className={`grid grid-cols-1 sm:grid-cols-2 ${role === "admin" ? "lg:grid-cols-4" : "lg:grid-cols-3"} gap-5`}>
         <StatCard title="Total Rooms"    value={roomTotal}                        icon="🛏️" loading={roomLoading} />
         <StatCard title="Total Bookings" value={bookingTotal}                     icon="📖" loading={bookingLoading} />
-        <StatCard title="Total Guests"   value={guestCount}                       icon="👥" loading={userLoading} />
+        {role === "admin" && (
+          <StatCard title="Total Guests" value={guestCount}                       icon="👥" loading={userLoading} />
+        )}
         <StatCard title="Revenue"        value={`$${revenue.toLocaleString()}`}   icon="💰" loading={bookingLoading} />
       </div>
 
@@ -96,7 +100,7 @@ export default function AdminDashboard() {
       {/* Welcome */}
       <div className="mt-5 bg-white rounded-lg p-6 shadow-sm border border-gray-100">
         <h3 className="text-lg font-serif text-[#0B1F2A] mb-2">
-          Welcome back to LuxuryStay Admin
+          Welcome back to LuxuryStay
         </h3>
         <p className="text-sm text-gray-500">
           Here is a live overview of LuxuryStay Hospitality's current performance.

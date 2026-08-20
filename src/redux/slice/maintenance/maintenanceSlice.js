@@ -11,7 +11,9 @@ export const fetchMaintenanceRequests = createAsyncThunk(
   "maintenance/fetchRequests",
   async (status = "", { rejectWithValue }) => {
     try {
-      const url = status ? `${BASE}/maintenance?status=${status}` : `${BASE}/maintenance`;
+      const url = status
+        ? `${BASE}/maintenance?status=${status}`
+        : `${BASE}/maintenance`;
       const res = await axios.get(url, authHeader());
       return res.data.requests;
     } catch (err) {
@@ -44,17 +46,64 @@ export const updateMaintenanceStatus = createAsyncThunk(
   }
 );
 
+export const fetchHousekeepingStaff = createAsyncThunk(
+  "maintenance/fetchHousekeepingStaff",
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await axios.get(`${BASE}/maintenance/housekeeping-staff`, authHeader());
+      return res.data.staff;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || "Failed to fetch housekeeping staff");
+    }
+  }
+);
+
+export const assignMaintenance = createAsyncThunk(
+  "maintenance/assign",
+  async ({ id, assignedTo }, { rejectWithValue }) => {
+    try {
+      const res = await axios.put(`${BASE}/maintenance/${id}/assign`, { assignedTo }, authHeader());
+      return res.data.request;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || "Failed to assign maintenance request");
+    }
+  }
+);
+
+export const fetchMyTasks = createAsyncThunk(
+  "maintenance/fetchMyTasks",
+  async (status = "", { rejectWithValue }) => {
+    try {
+      const url = status
+        ? `${BASE}/maintenance/my-tasks?status=${status}`
+        : `${BASE}/maintenance/my-tasks`;
+      const res = await axios.get(url, authHeader());
+      return res.data.tasks;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || "Failed to fetch your tasks");
+    }
+  }
+);
+
 const maintenanceSlice = createSlice({
   name: "maintenance",
   initialState: {
-    requests:      [],
-    loading:       false,
-    error:         null,
-    reportLoading: false,
-    reportError:   null,
-    reportSuccess: false,
-    updateLoading: null, // holds id of request currently being updated
-    updateError:   null,
+    requests:       [],
+    loading:        false,
+    error:          null,
+    reportLoading:  false,
+    reportError:    null,
+    reportSuccess:  false,
+    updateLoading:  null, // holds id of request currently being updated
+    updateError:    null,
+    staffList:      [],
+    staffLoading:   false,
+    staffError:     null,
+    assignLoading:  null, // holds id of request currently being assigned
+    assignError:    null,
+    myTasks:        [],
+    myTasksLoading: false,
+    myTasksError:   null,
   },
   reducers: {
     clearReportState: (state) => {
@@ -91,7 +140,7 @@ const maintenanceSlice = createSlice({
         state.reportLoading = false;
         state.reportError   = action.payload;
       })
-      // updateStatus — update only the status field to keep populated room/reportedBy intact
+      // updateStatus — patch both requests and myTasks arrays
       .addCase(updateMaintenanceStatus.pending, (state, action) => {
         state.updateLoading = action.meta.arg.id;
         state.updateError   = null;
@@ -101,10 +150,53 @@ const maintenanceSlice = createSlice({
         const { id, status } = action.payload;
         const idx = state.requests.findIndex(r => r._id === id);
         if (idx !== -1) state.requests[idx] = { ...state.requests[idx], status };
+        const myIdx = state.myTasks.findIndex(r => r._id === id);
+        if (myIdx !== -1) state.myTasks[myIdx] = { ...state.myTasks[myIdx], status };
       })
       .addCase(updateMaintenanceStatus.rejected, (state, action) => {
         state.updateLoading = null;
         state.updateError   = action.payload;
+      })
+      // fetchHousekeepingStaff
+      .addCase(fetchHousekeepingStaff.pending, (state) => {
+        state.staffLoading = true;
+        state.staffError   = null;
+      })
+      .addCase(fetchHousekeepingStaff.fulfilled, (state, action) => {
+        state.staffLoading = false;
+        state.staffList    = action.payload;
+      })
+      .addCase(fetchHousekeepingStaff.rejected, (state, action) => {
+        state.staffLoading = false;
+        state.staffError   = action.payload;
+      })
+      // assignMaintenance — replace the full request object to preserve populated fields
+      .addCase(assignMaintenance.pending, (state, action) => {
+        state.assignLoading = action.meta.arg.id;
+        state.assignError   = null;
+      })
+      .addCase(assignMaintenance.fulfilled, (state, action) => {
+        state.assignLoading = null;
+        const updated = action.payload;
+        const idx = state.requests.findIndex(r => r._id === updated._id);
+        if (idx !== -1) state.requests[idx] = updated;
+      })
+      .addCase(assignMaintenance.rejected, (state, action) => {
+        state.assignLoading = null;
+        state.assignError   = action.payload;
+      })
+      // fetchMyTasks
+      .addCase(fetchMyTasks.pending, (state) => {
+        state.myTasksLoading = true;
+        state.myTasksError   = null;
+      })
+      .addCase(fetchMyTasks.fulfilled, (state, action) => {
+        state.myTasksLoading = false;
+        state.myTasks        = action.payload;
+      })
+      .addCase(fetchMyTasks.rejected, (state, action) => {
+        state.myTasksLoading = false;
+        state.myTasksError   = action.payload;
       });
   },
 });

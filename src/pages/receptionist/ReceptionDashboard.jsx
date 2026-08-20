@@ -7,6 +7,8 @@ import TodayArrivals from "../../components/receptionist/TodayArrivals";
 import TodayDepartures from "../../components/receptionist/TodayDepartures";
 import CreateBookingForm from "../../components/receptionist/CreateBookingForm";
 import RoomStatusTable from "../../components/receptionist/RoomStatusTable";
+import ReportMaintenanceForm from "../../components/receptionist/ReportMaintenanceForm";
+import MaintenanceRequestsView from "../../components/maintenance/MaintenanceRequestsView";
 
 export default function ReceptionDashboard() {
   const dispatch = useDispatch();
@@ -21,6 +23,8 @@ export default function ReceptionDashboard() {
       <TodayArrivals />
       <TodayDepartures />
       <CreateBookingForm />
+      <ReportMaintenanceForm />
+      <MaintenanceRequestsView hideReportForm />
       <RoomStatusTable />
     </ReceptionistLayout>
   );

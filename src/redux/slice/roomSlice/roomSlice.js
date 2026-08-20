@@ -85,7 +85,22 @@ export const updateRoomStatus = createAsyncThunk(
   }
 );
 
-// 6. DELETE room  →  DELETE /api/deleteroom/:id   (admin only)
+// 6. CHECK AVAILABILITY  →  GET /api/rooms/available?checkIn=&checkOut=&guests=  (public)
+export const fetchAvailableRooms = createAsyncThunk(
+  "rooms/fetchAvailableRooms",
+  async ({ checkIn, checkOut, guests }, { rejectWithValue }) => {
+    try {
+      const params = new URLSearchParams({ checkIn, checkOut });
+      if (guests && Number(guests) > 1) params.set("guests", guests);
+      const res = await axios.get(`${BASE}/available?${params}`);
+      return res.data; // { success, count, rooms }
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || "Failed to check availability.");
+    }
+  }
+);
+
+// 7. DELETE room  →  DELETE /api/deleteroom/:id   (admin only)
 //    Permanently removes the room; returns the deleted room's id so we can
 //    remove it from local state without re-fetching the full list
 export const deleteRoom = createAsyncThunk(
@@ -131,6 +146,11 @@ const initialState = {
   // Delete
   deleteLoading: false,
   deleteError: null,
+
+  // Availability check (home page widget)
+  availableRooms: null,   // null = not searched yet; [] = searched, none found
+  availLoading: false,
+  availError: null,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -157,6 +177,11 @@ const roomSlice = createSlice({
     clearFormErrors: (state) => {
       state.createError = null;
       state.updateError = null;
+    },
+    // Reset availability results (e.g., when dates are cleared)
+    clearAvailability: (state) => {
+      state.availableRooms = null;
+      state.availError     = null;
     },
   },
   extraReducers: (builder) => {
@@ -237,7 +262,22 @@ const roomSlice = createSlice({
         state.statusError   = action.payload;
       })
 
-      // ── 6. Delete room ───────────────────────────────────────────────────
+      // ── 6. Check availability ────────────────────────────────────────────
+      .addCase(fetchAvailableRooms.pending, (state) => {
+        state.availLoading    = true;
+        state.availError      = null;
+        state.availableRooms  = null;
+      })
+      .addCase(fetchAvailableRooms.fulfilled, (state, action) => {
+        state.availLoading   = false;
+        state.availableRooms = action.payload.rooms;
+      })
+      .addCase(fetchAvailableRooms.rejected, (state, action) => {
+        state.availLoading   = false;
+        state.availError     = action.payload;
+      })
+
+      // ── 7. Delete room ───────────────────────────────────────────────────
       .addCase(deleteRoom.pending, (state) => {
         state.deleteLoading = true;
         state.deleteError   = null;
@@ -255,5 +295,5 @@ const roomSlice = createSlice({
   },
 });
 
-export const { clearSingleRoom, clearFormErrors } = roomSlice.actions;
+export const { clearSingleRoom, clearFormErrors, clearAvailability } = roomSlice.actions;
 export default roomSlice.reducer;

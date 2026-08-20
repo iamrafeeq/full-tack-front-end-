@@ -11,7 +11,7 @@ export const ROLES = {
 
 const DASHBOARDS = {
   admin: "/admin/dashboard",
-  manager: "/manager/dashboard",
+  manager: "/admin/dashboard",
   receptionist: "/receptionist/dashboard",
   housekeeping: "/housekeeping/dashboard",
   user: "/",

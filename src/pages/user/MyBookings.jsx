@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useAuth } from "../../context/AuthContext";
+import BookingFeedbackSection from "../../components/feedback/BookingFeedbackSection";
 import {
   fetchBookings,
   cancelBooking,
@@ -350,6 +351,16 @@ export default function MyBookings() {
                             </Link>
                           )}
                         </div>
+
+                        {/* Feedback — only for checked-out bookings */}
+                        {booking.status === "checked-out" && (
+                          <div className="border-t border-dashed border-gray-200 pt-4">
+                            <p className="text-xs text-gray-400 uppercase tracking-wide mb-2">
+                              Your Feedback
+                            </p>
+                            <BookingFeedbackSection bookingId={booking._id} />
+                          </div>
+                        )}
 
                         {/* Invoice — only for checked-out bookings */}
                         {booking.status === "checked-out" && (

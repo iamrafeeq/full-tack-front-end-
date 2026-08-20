@@ -1,8 +1,23 @@
 import React, { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchAvailableRooms, clearAvailability } from "../../redux/slice/roomSlice/roomSlice";
+
+const TYPE_IMAGES = {
+  single: "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=900&q=80",
+  double: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=900&q=80",
+  deluxe: "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=900&q=80",
+  suite:  "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=900&q=80",
+};
+const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=900&q=80";
 
 const Home = () => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { availableRooms, availLoading, availError } = useSelector((s) => s.rooms);
+
   const [activeFacility, setActiveFacility] = useState("Restaurant");
+  const [avail, setAvail] = useState({ checkIn: "", checkOut: "", guests: "1" });
 
   const navLinks = [
     { name: "Home", to: "/" },
@@ -158,61 +173,141 @@ const Home = () => {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="px-8 py-3.5 bg-[#C9A24B] text-[#0B1F2A] font-semibold rounded-full tracking-wide transition-all duration-300 hover:bg-white hover:scale-105 shadow-lg">
+            <Link
+              to="/booking"
+              className="px-8 py-3.5 bg-[#C9A24B] text-[#0B1F2A] font-semibold rounded-full tracking-wide transition-all duration-300 hover:bg-white hover:scale-105 shadow-lg text-center"
+            >
               Book Now
-            </button>
-            <button className="px-8 py-3.5 border border-white/70 text-white font-semibold rounded-full tracking-wide transition-all duration-300 hover:bg-white hover:text-[#0B1F2A] hover:scale-105">
+            </Link>
+            <Link
+              to="/rooms"
+              className="px-8 py-3.5 border border-white/70 text-white font-semibold rounded-full tracking-wide transition-all duration-300 hover:bg-white hover:text-[#0B1F2A] hover:scale-105 text-center"
+            >
               Explore Rooms
-            </button>
+            </Link>
           </div>
         </div>
       </section>
 
       {/* FLOATING BOOKING CARD */}
       <div className="relative z-20 max-w-6xl mx-auto px-6 -mt-16 md:-mt-20">
-        <div className="bg-white rounded-2xl shadow-2xl p-6 md:p-8 grid grid-cols-1 md:grid-cols-5 gap-6 items-end">
-          <div className="flex flex-col gap-2">
-            <label className="text-xs font-semibold text-[#13293D] uppercase tracking-wide">
-              Check In
-            </label>
-            <input
-              type="date"
-              className="border border-gray-200 rounded-lg px-4 py-2.5 text-[#13293D] text-sm focus:outline-none focus:ring-2 focus:ring-[#C9A24B]"
-            />
+        <div className="bg-white rounded-2xl shadow-2xl p-6 md:p-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-semibold text-[#13293D] uppercase tracking-wide">
+                Check In
+              </label>
+              <input
+                type="date"
+                value={avail.checkIn}
+                min={new Date().toISOString().split("T")[0]}
+                onChange={(e) => {
+                  setAvail((p) => ({ ...p, checkIn: e.target.value }));
+                  dispatch(clearAvailability());
+                }}
+                className="border border-gray-200 rounded-lg px-4 py-2.5 text-[#13293D] text-sm focus:outline-none focus:ring-2 focus:ring-[#C9A24B]"
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-semibold text-[#13293D] uppercase tracking-wide">
+                Check Out
+              </label>
+              <input
+                type="date"
+                value={avail.checkOut}
+                min={avail.checkIn || new Date().toISOString().split("T")[0]}
+                onChange={(e) => {
+                  setAvail((p) => ({ ...p, checkOut: e.target.value }));
+                  dispatch(clearAvailability());
+                }}
+                className="border border-gray-200 rounded-lg px-4 py-2.5 text-[#13293D] text-sm focus:outline-none focus:ring-2 focus:ring-[#C9A24B]"
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-semibold text-[#13293D] uppercase tracking-wide">
+                Guests
+              </label>
+              <select
+                value={avail.guests}
+                onChange={(e) => setAvail((p) => ({ ...p, guests: e.target.value }))}
+                className="border border-gray-200 rounded-lg px-4 py-2.5 text-[#13293D] text-sm focus:outline-none focus:ring-2 focus:ring-[#C9A24B]"
+              >
+                <option value="1">1 Guest</option>
+                <option value="2">2 Guests</option>
+                <option value="3">3 Guests</option>
+                <option value="4">4 Guests</option>
+                <option value="5">5+ Guests</option>
+              </select>
+            </div>
+            <button
+              disabled={!avail.checkIn || !avail.checkOut || availLoading}
+              onClick={() => dispatch(fetchAvailableRooms({ checkIn: avail.checkIn, checkOut: avail.checkOut, guests: avail.guests }))}
+              className="bg-[#0B1F2A] text-white font-semibold py-2.5 rounded-lg tracking-wide transition-all duration-300 hover:bg-[#C9A24B] hover:text-[#0B1F2A] hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {availLoading ? "Searching…" : "Check Availability"}
+            </button>
           </div>
-          <div className="flex flex-col gap-2">
-            <label className="text-xs font-semibold text-[#13293D] uppercase tracking-wide">
-              Check Out
-            </label>
-            <input
-              type="date"
-              className="border border-gray-200 rounded-lg px-4 py-2.5 text-[#13293D] text-sm focus:outline-none focus:ring-2 focus:ring-[#C9A24B]"
-            />
-          </div>
-          <div className="flex flex-col gap-2">
-            <label className="text-xs font-semibold text-[#13293D] uppercase tracking-wide">
-              Guests
-            </label>
-            <select className="border border-gray-200 rounded-lg px-4 py-2.5 text-[#13293D] text-sm focus:outline-none focus:ring-2 focus:ring-[#C9A24B]">
-              <option>1 Guest</option>
-              <option>2 Guests</option>
-              <option>3 Guests</option>
-              <option>4+ Guests</option>
-            </select>
-          </div>
-          <div className="flex flex-col gap-2">
-            <label className="text-xs font-semibold text-[#13293D] uppercase tracking-wide">
-              Rooms
-            </label>
-            <select className="border border-gray-200 rounded-lg px-4 py-2.5 text-[#13293D] text-sm focus:outline-none focus:ring-2 focus:ring-[#C9A24B]">
-              <option>1 Room</option>
-              <option>2 Rooms</option>
-              <option>3 Rooms</option>
-            </select>
-          </div>
-          <button className="bg-[#0B1F2A] text-white font-semibold py-3 rounded-lg tracking-wide transition-all duration-300 hover:bg-[#C9A24B] hover:scale-[1.02]">
-            Check Availability
-          </button>
+
+          {/* Results */}
+          {availError && (
+            <p className="mt-5 text-sm text-red-500">{availError}</p>
+          )}
+
+          {availableRooms !== null && !availLoading && (
+            <div className="mt-6 border-t border-gray-100 pt-5">
+              {availableRooms.length === 0 ? (
+                <p className="text-center text-gray-500 text-sm py-4">
+                  No rooms available for your selected dates. Try different dates.
+                </p>
+              ) : (
+                <>
+                  <p className="text-sm font-medium text-[#0B1F2A] mb-4">
+                    {availableRooms.length} room{availableRooms.length !== 1 ? "s" : ""} available
+                    <span className="text-gray-400 font-normal ml-1">· {avail.checkIn} → {avail.checkOut}</span>
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {availableRooms.slice(0, 6).map((room) => {
+                      const img = room.images?.[0]
+                        ? `http://localhost:5000/${room.images[0]}`
+                        : (TYPE_IMAGES[room.type] || DEFAULT_IMAGE);
+                      const price = room.discountPrice || room.price;
+                      return (
+                        <div key={room._id} className="flex gap-3 rounded-xl border border-gray-100 p-3 hover:border-[#C9A24B]/40 hover:shadow-sm transition-all">
+                          <img
+                            src={img}
+                            alt={`Room ${room.roomNumber}`}
+                            className="w-20 h-20 rounded-lg object-cover shrink-0"
+                          />
+                          <div className="flex flex-col justify-between min-w-0">
+                            <div>
+                              <p className="font-semibold text-[#0B1F2A] text-sm">Room {room.roomNumber}</p>
+                              <p className="text-xs text-gray-400 capitalize">{room.type} · {room.capacity} guests</p>
+                            </div>
+                            <div className="flex items-center justify-between gap-2 mt-1">
+                              <span className="text-[#C9A24B] font-semibold text-sm">${price}<span className="text-gray-400 font-normal text-xs">/night</span></span>
+                              <Link
+                                to={`/booking?room=${room._id}`}
+                                className="text-xs font-medium px-3 py-1.5 rounded-full bg-[#0B1F2A] text-white hover:bg-[#C9A24B] hover:text-[#0B1F2A] transition-colors"
+                              >
+                                Book
+                              </Link>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {availableRooms.length > 6 && (
+                    <p className="text-center mt-3">
+                      <Link to="/rooms" className="text-sm text-[#C9A24B] hover:underline">
+                        View all {availableRooms.length} available rooms →
+                      </Link>
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -299,9 +394,12 @@ const Home = () => {
                         /night
                       </span>
                     </p>
-                    <button className="text-xs font-semibold tracking-wide px-4 py-2 border border-[#C9A24B] text-[#C9A24B] rounded-full transition-all duration-300 hover:bg-[#C9A24B] hover:text-[#0B1F2A]">
+                    <Link
+                      to="/rooms"
+                      className="text-xs font-semibold tracking-wide px-4 py-2 border border-[#C9A24B] text-[#C9A24B] rounded-full transition-all duration-300 hover:bg-[#C9A24B] hover:text-[#0B1F2A]"
+                    >
                       Book Now
-                    </button>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -510,9 +608,12 @@ const Home = () => {
           <h2 className="font-serif text-3xl md:text-5xl leading-tight mb-8">
             Book Your Dream Stay Today
           </h2>
-          <button className="px-10 py-4 bg-[#C9A24B] text-[#0B1F2A] font-semibold rounded-full tracking-wide transition-all duration-300 hover:bg-white hover:scale-105 shadow-xl">
+          <Link
+            to="/booking"
+            className="inline-block px-10 py-4 bg-[#C9A24B] text-[#0B1F2A] font-semibold rounded-full tracking-wide transition-all duration-300 hover:bg-white hover:scale-105 shadow-xl"
+          >
             Book Now
-          </button>
+          </Link>
         </div>
       </section>
 

@@ -1,26 +1,37 @@
 import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import NotificationBell from "../notifications/NotificationBell";
 
-const sidebarLinks = [
+const SHARED_LINKS = [
   { label: "Dashboard",   to: "/admin/dashboard",   icon: "🏠" },
-  { label: "Guests",      to: "/admin/users",        icon: "👥" },
   { label: "Rooms",       to: "/admin/rooms",        icon: "🛏️" },
   { label: "Bookings",    to: "/admin/bookings",     icon: "📖" },
-  { label: "Invoices",    to: "/admin/invoices",     icon: "🧾" },
   { label: "Maintenance", to: "/admin/maintenance",  icon: "🔧" },
-  { label: "Revenue",     to: "/admin/revenue",      icon: "💰" },
-  { label: "Settings",    to: "/admin/settings",     icon: "⚙️" },
+  { label: "Reports",     to: "/admin/reports",      icon: "📊" },
+  { label: "Feedback",    to: "/admin/feedback",     icon: "⭐" },
+];
+
+const ADMIN_ONLY_LINKS = [
+  { label: "Guests",   to: "/admin/users",    icon: "👥" },
+  { label: "Invoices", to: "/admin/invoices", icon: "🧾" },
+  { label: "Settings", to: "/admin/settings", icon: "⚙️" },
 ];
 
 export default function AdminLayout({ children, title }) {
-  const { user, logout } = useAuth();
+  const { user, logout, role } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
 
+  const sidebarLinks = role === "admin"
+    ? [...SHARED_LINKS, ...ADMIN_ONLY_LINKS]
+    : SHARED_LINKS;
+
+  const panelLabel = role === "manager" ? "Manager Panel" : "Admin Panel";
+
   const pageTitle = title ||
     sidebarLinks.find((l) => location.pathname.startsWith(l.to))?.label ||
-    "Admin";
+    "Dashboard";
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -32,7 +43,7 @@ export default function AdminLayout({ children, title }) {
       >
         <div className="px-6 py-5 border-b border-white/10">
           <h1 className="text-xl font-serif text-[#C9A24B]">LuxuryStay</h1>
-          <p className="text-xs text-gray-400 mt-1">Admin Panel</p>
+          <p className="text-xs text-gray-400 mt-1">{panelLabel}</p>
         </div>
 
         <nav className="mt-4 flex-1">
@@ -79,6 +90,7 @@ export default function AdminLayout({ children, title }) {
           </div>
 
           <div className="flex items-center gap-4">
+            <NotificationBell />
             <span className="text-sm text-gray-600 hidden sm:inline">
               {user?.name || "Admin"}
             </span>

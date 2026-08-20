@@ -55,7 +55,7 @@ function Login() {
       login(result.user, result.token);
       const dashboards = {
         admin: "/admin/dashboard",
-        manager: "/manager/dashboard",
+        manager: "/admin/dashboard",
         receptionist: "/receptionist/dashboard",
         housekeeping: "/housekeeping/dashboard",
       };

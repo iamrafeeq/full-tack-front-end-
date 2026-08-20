@@ -8,6 +8,10 @@ import invoiceReducer       from './slice/invoice/invoiceSlice';
 import housekeepingReducer  from './slice/housekeeping/housekeepingSlice';
 import maintenanceReducer   from './slice/maintenance/maintenanceSlice';
 import receptionistReducer  from './slice/receptionist/receptionistSlice';
+import reportsReducer       from './slice/reports/reportsSlice';
+import feedbackReducer      from './slice/feedback/feedbackSlice';
+import settingsReducer      from './slice/settings/settingsSlice';
+import notificationsReducer from './slice/notifications/notificationsSlice';
 
 export const store = configureStore({
   reducer: {
@@ -20,5 +24,9 @@ export const store = configureStore({
     housekeeping: housekeepingReducer,  // cleaning room list + mark clean
     maintenance:  maintenanceReducer,   // maintenance request CRUD
     receptionist: receptionistReducer,  // today's arrivals/departures + guest search
+    reports:      reportsReducer,       // analytics dashboard stats
+    feedback:      feedbackReducer,       // guest feedback per booking + admin list/stats
+    settings:      settingsReducer,       // hotel settings (tax, policy, times)
+    notifications: notificationsReducer,  // per-user notification bell + list
   },
 });

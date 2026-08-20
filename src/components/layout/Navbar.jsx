@@ -1,13 +1,14 @@
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchBookings } from "../../redux/slice/Booking/bookingSlice";
 
 // Links shown in profile dropdown / mobile menu per staff role
 const ROLE_LINKS = {
   admin:        [{ label: "Admin Panel",    to: "/admin/dashboard" }],
-  manager:      [{ label: "Dashboard",      to: "/manager/dashboard" },
-                 { label: "Maintenance",    to: "/manager/maintenance" }],
+  manager:      [{ label: "Dashboard",      to: "/admin/dashboard" },
+                 { label: "Maintenance",    to: "/admin/maintenance" }],
   receptionist: [{ label: "Dashboard",      to: "/receptionist/dashboard" }],
   housekeeping: [{ label: "Dashboard",      to: "/housekeeping/dashboard" }],
 };
@@ -15,7 +16,7 @@ const ROLE_LINKS = {
 // Primary panel home used in the right-side navbar and mobile admin bar
 const PANEL_HOME = {
   admin:        "/admin/dashboard",
-  manager:      "/manager/dashboard",
+  manager:      "/admin/dashboard",
   receptionist: "/receptionist/dashboard",
   housekeeping: "/housekeeping/dashboard",
 };
@@ -27,10 +28,20 @@ function Navbar() {
   const [menuOpen,     setMenuOpen]     = useState(false);
   const [profileOpen,  setProfileOpen]  = useState(false);
 
+  const dispatch = useDispatch();
   const bookingTotal = useSelector((s) => s.bookings.total);
   const showMyBookings =
     isAuthenticated &&
     (bookingTotal > 0 || localStorage.getItem("hasBookings") === "true");
+
+  // Fetch the guest's own bookings once per session so "My Bookings" link
+  // appears correctly after re-login — even for receptionist-created bookings
+  // where the localStorage flag was never set in the guest's browser.
+  useEffect(() => {
+    if (isAuthenticated && role === "user") {
+      dispatch(fetchBookings());
+    }
+  }, [isAuthenticated, role, dispatch]);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);

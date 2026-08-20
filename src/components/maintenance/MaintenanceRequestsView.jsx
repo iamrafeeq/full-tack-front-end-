@@ -3,8 +3,9 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   fetchMaintenanceRequests,
   reportMaintenance,
-  updateMaintenanceStatus,
   clearReportState,
+  fetchHousekeepingStaff,
+  assignMaintenance,
 } from "../../redux/slice/maintenance/maintenanceSlice";
 import { fetchAllRooms } from "../../redux/slice/roomSlice/roomSlice";
 
@@ -21,22 +22,27 @@ const FILTERS = [
   { key: "resolved",    label: "Resolved" },
 ];
 
-export default function MaintenanceRequestsView() {
+export default function MaintenanceRequestsView({ hideReportForm = false }) {
   const dispatch = useDispatch();
   const {
-    requests, loading, error,
+    requests = [],
+    loading, error,
     reportLoading, reportError, reportSuccess,
-    updateLoading, updateError,
+    staffList = [],
+    assignLoading, assignError,
   } = useSelector((s) => s.maintenance);
   const { rooms } = useSelector((s) => s.rooms);
 
-  const [statusFilter, setStatusFilter] = useState("");
-  const [showForm,     setShowForm]     = useState(false);
-  const [reportRoom,   setReportRoom]   = useState("");
-  const [reportIssue,  setReportIssue]  = useState("");
+  const [statusFilter,  setStatusFilter]  = useState("");
+  const [showForm,      setShowForm]      = useState(false);
+  const [reportRoom,    setReportRoom]    = useState("");
+  const [reportIssue,   setReportIssue]   = useState("");
+  const [assigningId,   setAssigningId]   = useState(null);
+  const [selectedStaff, setSelectedStaff] = useState("");
 
   useEffect(() => {
     dispatch(fetchAllRooms());
+    dispatch(fetchHousekeepingStaff());
   }, [dispatch]);
 
   useEffect(() => {
@@ -48,7 +54,6 @@ export default function MaintenanceRequestsView() {
       setReportRoom("");
       setReportIssue("");
       setShowForm(false);
-      // refetch so the new request appears in the table
       dispatch(fetchMaintenanceRequests(statusFilter));
       const t = setTimeout(() => dispatch(clearReportState()), 3000);
       return () => clearTimeout(t);
@@ -61,8 +66,21 @@ export default function MaintenanceRequestsView() {
     dispatch(reportMaintenance({ room: reportRoom, issue: reportIssue.trim() }));
   };
 
-  const handleStatusChange = (id, status) => {
-    dispatch(updateMaintenanceStatus({ id, status }));
+  const openAssign = (req) => {
+    setAssigningId(req._id);
+    setSelectedStaff(req.assignedTo?._id || req.assignedTo?.id || "");
+  };
+
+  const cancelAssign = () => {
+    setAssigningId(null);
+    setSelectedStaff("");
+  };
+
+  const handleAssign = (id) => {
+    if (!selectedStaff) return;
+    dispatch(assignMaintenance({ id, assignedTo: selectedStaff })).then((result) => {
+      if (!result.error) cancelAssign();
+    });
   };
 
   return (
@@ -70,16 +88,18 @@ export default function MaintenanceRequestsView() {
       {/* Header row */}
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-serif text-[#0B1F2A]">Maintenance Requests</h2>
-        <button
-          onClick={() => setShowForm((v) => !v)}
-          className="px-4 py-2 bg-[#0B1F2A] text-white text-sm rounded-lg hover:opacity-90 transition"
-        >
-          {showForm ? "Cancel" : "+ Report Issue"}
-        </button>
+        {!hideReportForm && (
+          <button
+            onClick={() => setShowForm((v) => !v)}
+            className="px-4 py-2 bg-[#0B1F2A] text-white text-sm rounded-lg hover:opacity-90 transition"
+          >
+            {showForm ? "Cancel" : "+ Report Issue"}
+          </button>
+        )}
       </div>
 
       {/* Report form (collapsible) */}
-      {showForm && (
+      {!hideReportForm && showForm && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <h3 className="text-sm font-medium text-[#0B1F2A] mb-4">Report Maintenance Issue</h3>
           {reportError && (
@@ -133,10 +153,10 @@ export default function MaintenanceRequestsView() {
         </div>
       )}
 
-      {/* Action error */}
-      {updateError && (
+      {/* Action errors */}
+      {assignError && (
         <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-md">
-          {updateError}
+          {assignError}
         </div>
       )}
 
@@ -184,6 +204,7 @@ export default function MaintenanceRequestsView() {
                   <th className="px-5 py-3 text-left">Room</th>
                   <th className="px-5 py-3 text-left">Issue</th>
                   <th className="px-5 py-3 text-left">Reported By</th>
+                  <th className="px-5 py-3 text-left">Assigned To</th>
                   <th className="px-5 py-3 text-center">Status</th>
                   <th className="px-5 py-3 text-left whitespace-nowrap">Date</th>
                 </tr>
@@ -194,40 +215,91 @@ export default function MaintenanceRequestsView() {
                     key={req._id}
                     className="border-b border-gray-50 hover:bg-gray-50/60 transition-colors"
                   >
+                    {/* Room */}
                     <td className="px-5 py-3">
                       <p className="font-medium text-[#0B1F2A]">
                         Room {req.room?.roomNumber ?? "—"}
                       </p>
                       <p className="text-gray-400 text-xs capitalize">{req.room?.type}</p>
                     </td>
+
+                    {/* Issue */}
                     <td className="px-5 py-3 text-gray-700 max-w-xs">
                       <p className="line-clamp-2">{req.issue}</p>
                     </td>
+
+                    {/* Reported By */}
                     <td className="px-5 py-3">
                       <p className="font-medium text-[#0B1F2A]">{req.reportedBy?.name || "—"}</p>
                       <p className="text-gray-400 text-xs capitalize">{req.reportedBy?.role}</p>
                     </td>
-                    <td className="px-5 py-3 text-center">
-                      <div className="flex flex-col items-center gap-1">
-                        <span
-                          className={`px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize ${
-                            STATUS_COLORS[req.status] || "bg-gray-100 text-gray-600"
-                          }`}
-                        >
-                          {req.status}
-                        </span>
-                        <select
-                          value={req.status}
-                          onChange={(e) => handleStatusChange(req._id, e.target.value)}
-                          disabled={updateLoading === req._id}
-                          className="text-xs border border-gray-200 rounded px-1 py-0.5 text-gray-600 focus:outline-none focus:ring-1 focus:ring-[#C9A24B] disabled:opacity-50 cursor-pointer"
-                        >
-                          <option value="open">Open</option>
-                          <option value="in-progress">In Progress</option>
-                          <option value="resolved">Resolved</option>
-                        </select>
-                      </div>
+
+                    {/* Assigned To + Assign/Reassign control */}
+                    <td className="px-5 py-3">
+                      {assigningId === req._id ? (
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <select
+                            value={selectedStaff}
+                            onChange={(e) => setSelectedStaff(e.target.value)}
+                            className="text-xs border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[#C9A24B]"
+                          >
+                            <option value="">Select staff…</option>
+                            {staffList.map((s) => (
+                              <option key={s.id || s._id} value={s.id || s._id}>
+                                {s.name}
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            onClick={() => handleAssign(req._id)}
+                            disabled={!selectedStaff || assignLoading === req._id}
+                            className="text-xs px-2 py-1 bg-[#0B1F2A] text-white rounded hover:opacity-90 disabled:opacity-50 whitespace-nowrap"
+                          >
+                            {assignLoading === req._id ? "…" : "Confirm"}
+                          </button>
+                          <button
+                            onClick={cancelAssign}
+                            className="text-xs text-gray-400 hover:text-gray-600 px-1"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ) : req.assignedTo ? (
+                        <div>
+                          <p className="font-medium text-[#0B1F2A] text-sm">{req.assignedTo.name}</p>
+                          <p className="text-xs text-gray-400 capitalize">{req.assignedTo.role}</p>
+                          <button
+                            onClick={() => openAssign(req)}
+                            className="text-xs text-[#C9A24B] hover:underline"
+                          >
+                            Reassign
+                          </button>
+                        </div>
+                      ) : (
+                        <div>
+                          <p className="text-xs text-gray-400 mb-0.5">Unassigned</p>
+                          <button
+                            onClick={() => openAssign(req)}
+                            className="text-xs text-[#C9A24B] hover:underline"
+                          >
+                            + Assign
+                          </button>
+                        </div>
+                      )}
                     </td>
+
+                    {/* Status badge — read-only; only housekeeping can change status */}
+                    <td className="px-5 py-3 text-center">
+                      <span
+                        className={`px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize ${
+                          STATUS_COLORS[req.status] || "bg-gray-100 text-gray-600"
+                        }`}
+                      >
+                        {req.status}
+                      </span>
+                    </td>
+
+                    {/* Date */}
                     <td className="px-5 py-3 text-gray-500 text-xs whitespace-nowrap">
                       {new Date(req.createdAt).toLocaleDateString("en-US", {
                         month: "short",

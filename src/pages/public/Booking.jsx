@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { createBooking, clearBookingError } from "../../redux/slice/Booking/bookingSlice";
 import { fetchAllRooms } from "../../redux/slice/roomSlice/roomSlice";
+import { fetchSettings } from "../../redux/slice/settings/settingsSlice";
 import { useAuth } from "../../context/AuthContext";
 
 function Booking() {
@@ -16,6 +17,7 @@ function Booking() {
   const { token, user: authUser } = useAuth();
   const { rooms, loading: roomsLoading } = useSelector((state) => state.rooms);
   const { createLoading, createError }   = useSelector((state) => state.bookings);
+  const hotelSettings = useSelector((state) => state.settings?.data);
 
   const [form, setForm] = useState({
     room:          preselectedId || "",
@@ -32,6 +34,7 @@ function Booking() {
   useEffect(() => {
     dispatch(fetchAllRooms());
     dispatch(clearBookingError());
+    dispatch(fetchSettings());
   }, [dispatch]);
 
   // If rooms load and a preselected ID is in the URL, keep it in form
@@ -388,6 +391,28 @@ function Booking() {
                   {total > 0 ? `$${total.toLocaleString()}` : "—"}
                 </span>
               </div>
+
+              {/* Hotel Policies */}
+              {hotelSettings && (hotelSettings.checkInTime || hotelSettings.checkOutTime || hotelSettings.cancellationPolicy) && (
+                <div className="mt-6 pt-5 border-t border-white/10 space-y-3">
+                  <p className="text-[10px] font-medium uppercase tracking-widest text-[#C9A24B]">Hotel Policies</p>
+                  {hotelSettings.checkInTime && (
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-gray-400">Check-in</span>
+                      <span className="text-white">{hotelSettings.checkInTime}</span>
+                    </div>
+                  )}
+                  {hotelSettings.checkOutTime && (
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-gray-400">Check-out</span>
+                      <span className="text-white">{hotelSettings.checkOutTime}</span>
+                    </div>
+                  )}
+                  {hotelSettings.cancellationPolicy && (
+                    <p className="text-xs text-gray-400 leading-relaxed">{hotelSettings.cancellationPolicy}</p>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 

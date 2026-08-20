@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import NotificationBell from "../notifications/NotificationBell";
 
 const sidebarLinks = [
   { label: "Dashboard", to: "/receptionist/dashboard", icon: "🏠" },
@@ -71,6 +72,7 @@ export default function ReceptionistLayout({ children }) {
           </div>
 
           <div className="flex items-center gap-4">
+            <NotificationBell />
             <span className="text-sm text-gray-600 hidden sm:inline">
               {user?.name || "Receptionist"}
             </span>
