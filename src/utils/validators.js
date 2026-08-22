@@ -1,27 +1,31 @@
 // Shared validator functions — each returns an error string or undefined (no error)
 
-export const required = (value, label = "This field") => {
-  if (!value || !String(value).trim()) return `${label} is required.`;
+export const required = (value, label = "this field") => {
+  if (!value || !String(value).trim())
+    return label === "this field"
+      ? "Please fill in this field."
+      : `Please enter your ${label}.`;
 };
 
-// Only English letters and spaces — no numbers, symbols, or accented chars
 export const validName = (value) => {
   if (!value) return;
-  if (!/^[a-zA-Z ]+$/.test(value.trim()))
-    return "Name can only contain English letters.";
-  if (value.trim().length < 2)
+  const trimmed = value.trim();
+  if (!/^[a-zA-Z0-9._]+$/.test(trimmed))
+    return "Name can only contain letters, numbers, periods, and underscores.";
+  if (/\.\.|__/.test(trimmed))
+    return "Name can't contain consecutive periods or underscores.";
+  if (/^[._]|[._]$/.test(trimmed))
+    return "Name can't start or end with a period or underscore.";
+  if (trimmed.length < 2)
     return "Name must be at least 2 characters.";
 };
 
-// Standard email — local part can have letters, digits, dots, hyphens, underscores
 export const validEmail = (value) => {
   if (!value) return;
   if (!/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/.test(value))
     return "Enter a valid email address (e.g. john@example.com).";
 };
 
-// Password rules: 8+ chars, at least one letter, one digit, one special char
-// Special chars allowed: ! @ # $ % ^ & * _ - .
 export const strongPassword = (value) => {
   if (!value) return;
   if (value.length < 6)
@@ -50,8 +54,11 @@ export const matchPassword = (password, confirm) => {
 // Phone: optional leading +, digits, spaces, hyphens, parentheses — 7 to 15 digits total
 export const validPhone = (value) => {
   if (!value) return;
-  if (!/^\+?[\d\s\-()+]{7,11}$/.test(value))
-    return "Enter a valid phone number ).";
+  if (!/^\+?[\d\s\-()]+$/.test(value))
+    return "Enter a valid phone number.";
+  const digitCount = value.replace(/\D/g, "").length;
+  if (digitCount < 7 || digitCount > 11)
+    return "Phone number must be 7 to 11 digits.";
 };
 
 // Nationality — only English letters and spaces

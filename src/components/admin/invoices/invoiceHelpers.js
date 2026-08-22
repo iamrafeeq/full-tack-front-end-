@@ -16,6 +16,17 @@ export const STATUS_COLORS = {
   unpaid:  "bg-yellow-100 text-yellow-700",
 };
 
+const METHOD_LABELS = {
+  credit_card:   "Credit Card",
+  debit_card:    "Debit Card",
+  easypaisa:     "EasyPaisa",
+  jazzcash:      "JazzCash",
+  bank_transfer: "Bank Transfer",
+  cash:          "Cash",
+};
+
+export const fmtMethod = (m) => METHOD_LABELS[m] || (m ? m.replace(/_/g, " ") : "—");
+
 export const downloadInvoicePdf = async (invoiceId) => {
   const token = localStorage.getItem("token");
   const response = await fetch(

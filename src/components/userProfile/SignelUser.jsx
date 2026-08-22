@@ -33,12 +33,12 @@ export default function Profile() {
 
   const validateEditField = (fieldName, value) => {
     switch (fieldName) {
-      case "name":                 return runValidators(value, [required, validName]);
+      case "name":                 return runValidators(value, [(v) => required(v, "full name"), validName]);
       case "phone":                return runValidators(value, [validPhone]);
       case "Nationality":          return runValidators(value, [validNationality]);
       case "Date_OF_Birth":        return validDateOfBirth(value);
       case "CNIC_Passport_Number": return runValidators(value, [validCNIC]);
-      case "Address":              return required(value, "Address");
+      case "Address":              return required(value, "address");
       default:                     return undefined;
     }
   };

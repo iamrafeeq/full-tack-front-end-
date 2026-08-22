@@ -13,6 +13,7 @@ import { fetchInvoices } from "../../redux/slice/invoice/invoiceSlice";
 import {
   fmt,
   fmtDate as fmtInvDate,
+  fmtMethod,
   STATUS_COLORS,
   downloadInvoicePdf,
 } from "../../components/admin/invoices/invoiceHelpers";
@@ -114,7 +115,7 @@ export default function MyBookings() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <div className="min-h-screen bg-gray-50 pt-20">
 
       {/* ── Hero header ──────────────────────────────────────────────────────── */}
       <div className="bg-[#0B1F2A] text-white px-6 pt-10 pb-14">
@@ -164,7 +165,7 @@ export default function MyBookings() {
           <>
             {/* ══ Active Bookings ════════════════════════════════════════════════ */}
             <section>
-              <div className="flex items-baseline gap-2 mb-4">
+              <div className="flex items-baseline gap- mb-4">
                 <h2 className="font-serif text-2xl text-[#0B1F2A]">Active Bookings</h2>
                 <span className="text-sm text-gray-400">({active.length})</span>
               </div>
@@ -172,7 +173,7 @@ export default function MyBookings() {
               {active.length === 0 ? (
                 history.length > 0 ? (
                   // Compact notice so history is immediately visible below
-                  <div className="bg-white rounded-xl border border-dashed border-gray-200 px-5 py-6 flex items-center justify-between gap-4">
+                  <div className="bg-white rounded-xl border border-dashed border-gray-200 px-5 py-6 flex items-center justify-between gap-10">
                     <div>
                       <p className="text-sm font-medium text-gray-500">No upcoming or active stays right now.</p>
                       <p className="text-xs text-gray-400 mt-0.5">Your previous stays are shown below.</p>
@@ -386,6 +387,15 @@ export default function MyBookings() {
                                     {inv.paymentStatus === "paid" ? "Paid" : "Pending"}
                                   </span>
                                 </div>
+                                {inv.paymentDetails && inv.paymentStatus === "paid" && (
+                                  <p className="text-xs text-gray-500">
+                                    Paid via{" "}
+                                    <span className="font-medium">{fmtMethod(inv.paymentDetails.method)}</span>
+                                    {inv.paymentDetails.paidAt && (
+                                      <> on {fmtInvDate(inv.paymentDetails.paidAt)}</>
+                                    )}
+                                  </p>
+                                )}
 
                                 {/* Charge breakdown */}
                                 <div className="bg-gray-50 rounded-xl p-3 space-y-1.5 text-sm">

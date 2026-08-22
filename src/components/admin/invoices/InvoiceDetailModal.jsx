@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { fmt, fmtDate, STATUS_COLORS, downloadInvoicePdf } from "./invoiceHelpers";
+import { fmt, fmtDate, fmtMethod, STATUS_COLORS, downloadInvoicePdf } from "./invoiceHelpers";
 
 export default function InvoiceDetailModal({ invoice, onClose }) {
   const [pdfLoading, setPdfLoading] = useState(false);
@@ -81,6 +81,15 @@ export default function InvoiceDetailModal({ invoice, onClose }) {
             </span>
             <span className="text-xs text-gray-400">Issued {fmtDate(invoice.createdAt)}</span>
           </div>
+          {invoice.paymentDetails && invoice.paymentStatus === "paid" && (
+            <p className="text-xs text-gray-500">
+              Paid via{" "}
+              <span className="font-medium">{fmtMethod(invoice.paymentDetails.method)}</span>
+              {invoice.paymentDetails.paidAt && (
+                <> on {fmtDate(invoice.paymentDetails.paidAt)}</>
+              )}
+            </p>
+          )}
         </div>
 
         {/* Footer — Download only, no mark-paid */}

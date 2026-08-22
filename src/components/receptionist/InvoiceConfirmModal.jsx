@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { fmt, downloadInvoicePdf } from "../admin/invoices/invoiceHelpers";
+import { fmt, fmtDate, fmtMethod, downloadInvoicePdf } from "../admin/invoices/invoiceHelpers";
 
 export default function InvoiceConfirmModal({ invoice, onClose }) {
   const [pdfLoading, setPdfLoading] = useState(false);
@@ -59,6 +59,14 @@ export default function InvoiceConfirmModal({ invoice, onClose }) {
               {invoice.paymentStatus === "paid" ? "Paid" : "Pending"}
             </span>
           </div>
+          {invoice.paymentDetails && invoice.paymentStatus === "paid" && (
+            <p className="text-xs text-gray-500 text-right">
+              via <span className="font-medium">{fmtMethod(invoice.paymentDetails.method)}</span>
+              {invoice.paymentDetails.paidAt && (
+                <> · {fmtDate(invoice.paymentDetails.paidAt)}</>
+              )}
+            </p>
+          )}
         </div>
 
         <div className="flex gap-3">

@@ -12,6 +12,8 @@ import reportsReducer       from './slice/reports/reportsSlice';
 import feedbackReducer      from './slice/feedback/feedbackSlice';
 import settingsReducer      from './slice/settings/settingsSlice';
 import notificationsReducer from './slice/notifications/notificationsSlice';
+import contactReducer       from './slice/contactUs/contactusSlice';
+import paymentsReducer      from './slice/payments/paymentsSlice';
 
 export const store = configureStore({
   reducer: {
@@ -28,5 +30,7 @@ export const store = configureStore({
     feedback:      feedbackReducer,       // guest feedback per booking + admin list/stats
     settings:      settingsReducer,       // hotel settings (tax, policy, times)
     notifications: notificationsReducer,  // per-user notification bell + list
+    contact:       contactReducer,        // public contact form + admin message list
+    payments:      paymentsReducer,       // Stripe payment intent + confirm
   },
 });

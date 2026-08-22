@@ -1,81 +1,84 @@
-import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import NotificationBell from "../notifications/NotificationBell";
 
-const sidebarLinks = [
-  { label: "Dashboard", to: "/housekeeping/dashboard", icon: "🏠" },
+const NAV_LINKS = [
+  { label: "Dashboard",         to: "/housekeeping/dashboard",          icon: "🏠" },
+  { label: "Rooms to Clean",    to: "/housekeeping/rooms-to-clean",     icon: "🧹" },
+  { label: "Maintenance Tasks", to: "/housekeeping/maintenance-tasks",  icon: "🔧" },
+  { label: "Report Issue",      to: "/housekeeping/report-issue",       icon: "📋" },
 ];
 
 export default function HousekeepingLayout({ children, title }) {
   const { user, logout } = useAuth();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
-      <aside
-        className={`fixed md:static z-30 top-0 left-0 h-full w-64 bg-[#0B1F2A] text-white flex flex-col transform transition-transform duration-200 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } md:translate-x-0`}
-      >
+    <div className="min-h-screen bg-[#F5F3EE] flex">
+      {/* Always-visible sidebar */}
+      <aside className="w-64 shrink-0 bg-[#0B1F2A] text-white flex flex-col sticky top-0 h-screen">
+        {/* Brand */}
         <div className="px-6 py-5 border-b border-white/10">
-          <h1 className="text-xl font-serif text-[#C9A24B]">LuxuryStay</h1>
-          <p className="text-xs text-gray-400 mt-1">Housekeeping Panel</p>
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full border-2 border-[#C9A24B] flex items-center justify-center shrink-0">
+              <span className="font-serif text-[#C9A24B] text-xs tracking-wider">LS</span>
+            </div>
+            <div>
+              <p className="text-sm font-serif leading-tight">LuxuryStay</p>
+              <p className="text-[10px] tracking-[0.2em] text-[#C9A24B] uppercase">Housekeeping</p>
+            </div>
+          </div>
         </div>
-        <nav className="mt-4 flex-1">
-          {sidebarLinks.map((link) => (
+
+        {/* Nav links */}
+        <nav className="mt-3 flex-1 px-3 space-y-0.5 overflow-y-auto">
+          {NAV_LINKS.map((link) => (
             <NavLink
               key={link.to}
               to={link.to}
-              onClick={() => setSidebarOpen(false)}
               className={({ isActive }) =>
-                `w-full flex items-center gap-3 px-6 py-3 text-sm transition ${
+                `flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors ${
                   isActive
-                    ? "bg-[#C9A24B] text-[#0B1F2A] font-medium"
-                    : "text-gray-300 hover:bg-white/5"
+                    ? "bg-[#C9A24B]/15 text-[#C9A24B] font-medium"
+                    : "text-white/70 hover:bg-white/5 hover:text-white"
                 }`
               }
             >
-              <span>{link.icon}</span>
+              <span className="text-base shrink-0">{link.icon}</span>
               <span>{link.label}</span>
             </NavLink>
           ))}
         </nav>
-      </aside>
 
-      {/* Mobile overlay */}
-      {sidebarOpen && (
-        <div
-          onClick={() => setSidebarOpen(false)}
-          className="fixed inset-0 bg-black/40 z-20 md:hidden"
-        />
-      )}
+        {/* User + sign out */}
+        <div className="px-3 py-4 border-t border-white/10">
+          <div className="flex items-center gap-3 px-3 mb-2">
+            <div className="w-8 h-8 rounded-full bg-[#C9A24B]/20 flex items-center justify-center text-[#C9A24B] text-sm font-medium shrink-0">
+              {(user?.name || "H").charAt(0).toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm text-white truncate">{user?.name}</p>
+              <p className="text-xs text-white/40 capitalize">{user?.role}</p>
+            </div>
+          </div>
+          <button
+            onClick={logout}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm text-white/50 hover:bg-white/5 hover:text-white transition-colors"
+          >
+            <span className="text-base shrink-0">🚪</span>
+            <span>Sign Out</span>
+          </button>
+        </div>
+      </aside>
 
       {/* Main area */}
       <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
-        <header className="bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="md:hidden text-[#0B1F2A] text-xl"
-            >
-              ☰
-            </button>
-            <h2 className="text-lg font-serif text-[#0B1F2A]">{title || "Dashboard"}</h2>
-          </div>
-          <div className="flex items-center gap-4">
+        <header className="bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between sticky top-0 z-10 shadow-sm">
+          <h2 className="text-lg font-serif text-[#0B1F2A]">{title || "Dashboard"}</h2>
+          <div className="flex items-center gap-3">
             <NotificationBell />
-            <span className="text-sm text-gray-600 hidden sm:inline">{user?.name}</span>
             <div className="w-9 h-9 rounded-full bg-[#0B1F2A] text-[#C9A24B] flex items-center justify-center text-sm font-medium">
               {(user?.name || "H").charAt(0).toUpperCase()}
             </div>
-            <button
-              onClick={logout}
-              className="bg-[#0B1F2A] text-white text-sm px-4 py-2 rounded-md hover:opacity-90"
-            >
-              Logout
-            </button>
           </div>
         </header>
         <main className="flex-1 p-6 overflow-auto">{children}</main>

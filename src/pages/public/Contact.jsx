@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { submitContact, clearSubmitState } from "../../redux/slice/contactUs/contactusSlice";
 
 const businessHours = [
   { day: "Monday - Friday", time: "8:00 AM - 10:00 PM" },
@@ -30,6 +32,9 @@ const faqs = [
 ];
 
 function Contact() {
+  const dispatch = useDispatch();
+  const { submitLoading, submitError, submitSuccess } = useSelector((s) => s.contact);
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -38,7 +43,14 @@ function Contact() {
     message: "",
   });
   const [openFaq, setOpenFaq] = useState(null);
-  const [submitted, setSubmitted] = useState(false);
+
+  // Clear success banner after 5s and reset form
+  useEffect(() => {
+    if (!submitSuccess) return;
+    setFormData({ name: "", email: "", phone: "", subject: "", message: "" });
+    const t = setTimeout(() => dispatch(clearSubmitState()), 5000);
+    return () => clearTimeout(t);
+  }, [submitSuccess, dispatch]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -46,8 +58,7 @@ function Contact() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    setSubmitted(true);
-    setFormData({ name: "", email: "", phone: "", subject: "", message: "" });
+    dispatch(submitContact(formData));
   };
 
   return (
@@ -101,9 +112,14 @@ function Contact() {
               Send Us A Message
             </h2>
 
-            {submitted && (
+            {submitSuccess && (
               <p className="mt-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">
-                Thank you, your message has been sent successfully.
+                Thank you! Your message has been sent. We'll get back to you shortly.
+              </p>
+            )}
+            {submitError && (
+              <p className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+                {submitError}
               </p>
             )}
 
@@ -180,9 +196,10 @@ function Contact() {
 
               <button
                 type="submit"
-                className="w-full rounded-full bg-[#0B1F2A] py-3 font-medium text-white transition hover:scale-105 hover:opacity-90 sm:w-auto sm:px-10"
+                disabled={submitLoading}
+                className="w-full rounded-full bg-[#0B1F2A] py-3 font-medium text-white transition hover:scale-105 hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed sm:w-auto sm:px-10"
               >
-                Send Message
+                {submitLoading ? "Sending…" : "Send Message"}
               </button>
             </form>
           </div>

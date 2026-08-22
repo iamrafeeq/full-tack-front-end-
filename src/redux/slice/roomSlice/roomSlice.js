@@ -14,13 +14,28 @@ const authHeader = () => {
 // THUNKS  — each thunk maps to one backend endpoint
 // ─────────────────────────────────────────────────────────────────────────────
 
-// 1. GET all rooms  →  GET /api/getallrooms
-//    Any authenticated user can fetch the full room list
+// 1. GET all rooms  →  GET /api/getallrooms?limit=100[&includeInactive=true]
 export const fetchAllRooms = createAsyncThunk(
   "rooms/fetchAllRooms",
+  async (includeInactive = false, { rejectWithValue }) => {
+    try {
+      const params = new URLSearchParams({ limit: 100 });
+      if (includeInactive) params.set("includeInactive", "true");
+      const res = await axios.get(`${BASE}/getallrooms?${params}`, authHeader());
+      return res.data; // { success, total, rooms }
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || "Failed to fetch rooms.");
+    }
+  }
+);
+
+// 1b. GET all rooms (public, no admin token needed)  →  GET /api/getallrooms?limit=100
+//     Used by non-admin roles (housekeeping, receptionist) that cannot hit the admin endpoint.
+export const fetchPublicRooms = createAsyncThunk(
+  "rooms/fetchPublicRooms",
   async (_, { rejectWithValue }) => {
     try {
-      const res = await axios.get(`${BASE}/getallrooms`, authHeader());
+      const res = await axios.get(`${BASE}/getallrooms?limit=100`, authHeader());
       return res.data; // { success, total, rooms }
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to fetch rooms.");
@@ -29,7 +44,6 @@ export const fetchAllRooms = createAsyncThunk(
 );
 
 // 2. GET single room  →  GET /api/getroom/:id
-//    Useful for a detail view or pre-filling an edit form from the API
 export const fetchSingleRoom = createAsyncThunk(
   "rooms/fetchSingleRoom",
   async (id, { rejectWithValue }) => {
@@ -43,7 +57,6 @@ export const fetchSingleRoom = createAsyncThunk(
 );
 
 // 3. CREATE room  →  POST /api/createroom   (admin / manager only)
-//    Sends the full room object; returns the newly created room document
 export const createRoom = createAsyncThunk(
   "rooms/createRoom",
   async (roomData, { rejectWithValue }) => {
@@ -57,7 +70,6 @@ export const createRoom = createAsyncThunk(
 );
 
 // 4. UPDATE room details  →  PUT /api/updateroom/:id   (admin / manager only)
-//    Send only the fields you want to change; backend merges them
 export const updateRoom = createAsyncThunk(
   "rooms/updateRoom",
   async ({ id, roomData }, { rejectWithValue }) => {
@@ -71,8 +83,6 @@ export const updateRoom = createAsyncThunk(
 );
 
 // 5. UPDATE room status only  →  PATCH /api/updatestatus/:id   (admin / manager only)
-//    Quick status change without touching other fields
-//    Valid statuses: available | reserved | occupied | cleaning | maintenance
 export const updateRoomStatus = createAsyncThunk(
   "rooms/updateRoomStatus",
   async ({ id, status }, { rejectWithValue }) => {
@@ -85,7 +95,7 @@ export const updateRoomStatus = createAsyncThunk(
   }
 );
 
-// 6. CHECK AVAILABILITY  →  GET /api/rooms/available?checkIn=&checkOut=&guests=  (public)
+// 6. CHECK AVAILABILITY  →  GET /api/available?checkIn=&checkOut=&guests=  (public)
 export const fetchAvailableRooms = createAsyncThunk(
   "rooms/fetchAvailableRooms",
   async ({ checkIn, checkOut, guests }, { rejectWithValue }) => {
@@ -101,16 +111,42 @@ export const fetchAvailableRooms = createAsyncThunk(
 );
 
 // 7. DELETE room  →  DELETE /api/deleteroom/:id   (admin only)
-//    Permanently removes the room; returns the deleted room's id so we can
-//    remove it from local state without re-fetching the full list
+//    Rejected by backend if the room has any booking history.
 export const deleteRoom = createAsyncThunk(
   "rooms/deleteRoom",
   async (id, { rejectWithValue }) => {
     try {
       await axios.delete(`${BASE}/deleteroom/${id}`, authHeader());
-      return id; // just the id — used in the reducer to filter it out
+      return id;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to delete room.");
+    }
+  }
+);
+
+// 8. DEACTIVATE room  →  PUT /api/deactivateroom/:id   (admin only)
+//    Rejected by backend if the room has an active booking (booked / checked-in).
+export const deactivateRoom = createAsyncThunk(
+  "rooms/deactivateRoom",
+  async (id, { rejectWithValue }) => {
+    try {
+      const res = await axios.put(`${BASE}/deactivateroom/${id}`, {}, authHeader());
+      return res.data; // { success, room }
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || "Failed to deactivate room.");
+    }
+  }
+);
+
+// 9. ACTIVATE room  →  PUT /api/activateroom/:id   (admin only)
+export const activateRoom = createAsyncThunk(
+  "rooms/activateRoom",
+  async (id, { rejectWithValue }) => {
+    try {
+      const res = await axios.put(`${BASE}/activateroom/${id}`, {}, authHeader());
+      return res.data; // { success, room }
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || "Failed to activate room.");
     }
   }
 );
@@ -120,41 +156,42 @@ export const deleteRoom = createAsyncThunk(
 // ─────────────────────────────────────────────────────────────────────────────
 
 const initialState = {
-  // All rooms list
   rooms: [],
   total: 0,
   loading: false,
   error: null,
 
-  // Single room (for detail / edit pre-fill from API)
   singleRoom: null,
   singleLoading: false,
   singleError: null,
 
-  // Create
   createLoading: false,
   createError: null,
 
-  // Update room details
   updateLoading: false,
   updateError: null,
 
-  // Status-only update
   statusLoading: false,
   statusError: null,
 
-  // Delete
   deleteLoading: false,
   deleteError: null,
 
-  // Availability check (home page widget)
-  availableRooms: null,   // null = not searched yet; [] = searched, none found
+  // id of the room currently being deactivated; null when idle
+  deactivateLoading: null,
+  deactivateError: null,
+
+  // id of the room currently being activated; null when idle
+  activateLoading: null,
+  activateError: null,
+
+  availableRooms: null,
   availLoading: false,
   availError: null,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// HELPERS  — update a single room in the rooms array by _id
+// HELPERS
 // ─────────────────────────────────────────────────────────────────────────────
 
 const replaceRoom = (rooms, updatedRoom) =>
@@ -168,20 +205,24 @@ const roomSlice = createSlice({
   name: "rooms",
   initialState,
   reducers: {
-    // Clear single room when closing a detail modal
     clearSingleRoom: (state) => {
-      state.singleRoom = null;
+      state.singleRoom  = null;
       state.singleError = null;
     },
-    // Reset create/update errors when opening a fresh form
     clearFormErrors: (state) => {
       state.createError = null;
       state.updateError = null;
     },
-    // Reset availability results (e.g., when dates are cleared)
     clearAvailability: (state) => {
       state.availableRooms = null;
       state.availError     = null;
+    },
+    clearDeleteError: (state) => {
+      state.deleteError = null;
+    },
+    clearActionErrors: (state) => {
+      state.deactivateError = null;
+      state.activateError   = null;
     },
   },
   extraReducers: (builder) => {
@@ -190,14 +231,29 @@ const roomSlice = createSlice({
       // ── 1. Fetch all rooms ───────────────────────────────────────────────
       .addCase(fetchAllRooms.pending, (state) => {
         state.loading = true;
-        state.error = null;
+        state.error   = null;
       })
       .addCase(fetchAllRooms.fulfilled, (state, action) => {
         state.loading = false;
-        state.rooms = action.payload.rooms;
-        state.total  = action.payload.total;
+        state.rooms   = action.payload.rooms;
+        state.total   = action.payload.total;
       })
       .addCase(fetchAllRooms.rejected, (state, action) => {
+        state.loading = false;
+        state.error   = action.payload;
+      })
+
+      // ── 1b. Fetch public rooms (housekeeping / receptionist) ─────────────
+      .addCase(fetchPublicRooms.pending, (state) => {
+        state.loading = true;
+        state.error   = null;
+      })
+      .addCase(fetchPublicRooms.fulfilled, (state, action) => {
+        state.loading = false;
+        state.rooms   = action.payload.rooms;
+        state.total   = action.payload.total;
+      })
+      .addCase(fetchPublicRooms.rejected, (state, action) => {
         state.loading = false;
         state.error   = action.payload;
       })
@@ -223,7 +279,6 @@ const roomSlice = createSlice({
       })
       .addCase(createRoom.fulfilled, (state, action) => {
         state.createLoading = false;
-        // Prepend the new room so it appears at the top of the list
         state.rooms.unshift(action.payload.room);
         state.total += 1;
       })
@@ -239,7 +294,6 @@ const roomSlice = createSlice({
       })
       .addCase(updateRoom.fulfilled, (state, action) => {
         state.updateLoading = false;
-        // Replace the old room object with the fresh one from the API
         state.rooms = replaceRoom(state.rooms, action.payload.room);
       })
       .addCase(updateRoom.rejected, (state, action) => {
@@ -254,7 +308,6 @@ const roomSlice = createSlice({
       })
       .addCase(updateRoomStatus.fulfilled, (state, action) => {
         state.statusLoading = false;
-        // Only status changed — still replace the whole object with fresh data
         state.rooms = replaceRoom(state.rooms, action.payload.room);
       })
       .addCase(updateRoomStatus.rejected, (state, action) => {
@@ -264,17 +317,17 @@ const roomSlice = createSlice({
 
       // ── 6. Check availability ────────────────────────────────────────────
       .addCase(fetchAvailableRooms.pending, (state) => {
-        state.availLoading    = true;
-        state.availError      = null;
-        state.availableRooms  = null;
+        state.availLoading   = true;
+        state.availError     = null;
+        state.availableRooms = null;
       })
       .addCase(fetchAvailableRooms.fulfilled, (state, action) => {
         state.availLoading   = false;
         state.availableRooms = action.payload.rooms;
       })
       .addCase(fetchAvailableRooms.rejected, (state, action) => {
-        state.availLoading   = false;
-        state.availError     = action.payload;
+        state.availLoading = false;
+        state.availError   = action.payload;
       })
 
       // ── 7. Delete room ───────────────────────────────────────────────────
@@ -284,16 +337,49 @@ const roomSlice = createSlice({
       })
       .addCase(deleteRoom.fulfilled, (state, action) => {
         state.deleteLoading = false;
-        // action.payload is the deleted room's _id — filter it out
         state.rooms = state.rooms.filter((r) => r._id !== action.payload);
         state.total -= 1;
       })
       .addCase(deleteRoom.rejected, (state, action) => {
         state.deleteLoading = false;
         state.deleteError   = action.payload;
+      })
+
+      // ── 8. Deactivate room ───────────────────────────────────────────────
+      .addCase(deactivateRoom.pending, (state, action) => {
+        state.deactivateLoading = action.meta.arg; // store the room id
+        state.deactivateError   = null;
+      })
+      .addCase(deactivateRoom.fulfilled, (state, action) => {
+        state.deactivateLoading = null;
+        state.rooms = replaceRoom(state.rooms, action.payload.room);
+      })
+      .addCase(deactivateRoom.rejected, (state, action) => {
+        state.deactivateLoading = null;
+        state.deactivateError   = action.payload;
+      })
+
+      // ── 9. Activate room ─────────────────────────────────────────────────
+      .addCase(activateRoom.pending, (state, action) => {
+        state.activateLoading = action.meta.arg; // store the room id
+        state.activateError   = null;
+      })
+      .addCase(activateRoom.fulfilled, (state, action) => {
+        state.activateLoading = null;
+        state.rooms = replaceRoom(state.rooms, action.payload.room);
+      })
+      .addCase(activateRoom.rejected, (state, action) => {
+        state.activateLoading = null;
+        state.activateError   = action.payload;
       });
   },
 });
 
-export const { clearSingleRoom, clearFormErrors, clearAvailability } = roomSlice.actions;
+export const {
+  clearSingleRoom,
+  clearFormErrors,
+  clearAvailability,
+  clearDeleteError,
+  clearActionErrors,
+} = roomSlice.actions;
 export default roomSlice.reducer;

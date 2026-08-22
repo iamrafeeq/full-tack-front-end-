@@ -1,127 +1,104 @@
+
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchMaintenanceRequests,
   reportMaintenance,
-  clearReportState,
+  updateMaintenanceStatus,
   fetchHousekeepingStaff,
   assignMaintenance,
+  clearReportState,
 } from "../../redux/slice/maintenance/maintenanceSlice";
-import { fetchAllRooms } from "../../redux/slice/roomSlice/roomSlice";
+import { fetchPublicRooms } from "../../redux/slice/roomSlice/roomSlice";
+import {
+  StatCard, TableCard, Th, Badge, Pills, Spinner, ErrorBanner, SuccessBanner,
+  EmptyState, Modal, btn, input, label, fmtDate,
+} from "../admin/AdminUI";
 
-const STATUS_COLORS = {
-  open:          "bg-red-100 text-red-700",
-  "in-progress": "bg-yellow-100 text-yellow-700",
-  resolved:      "bg-green-100 text-green-700",
-};
-
-const FILTERS = [
-  { key: "",            label: "All" },
-  { key: "open",        label: "Open" },
-  { key: "in-progress", label: "In Progress" },
-  { key: "resolved",    label: "Resolved" },
+const TABS = [
+  { value: "", label: "All" },
+  { value: "open", label: "Open" },
+  { value: "in-progress", label: "In Progress" },
+  { value: "resolved", label: "Resolved" },
 ];
 
-export default function MaintenanceRequestsView({ hideReportForm = false }) {
+const STATUS_OPTIONS = ["open", "in-progress", "resolved"];
+
+export default function Maintenance() {
   const dispatch = useDispatch();
   const {
-    requests = [],
-    loading, error,
+    requests, loading, error,
     reportLoading, reportError, reportSuccess,
-    staffList = [],
+    updateLoading, updateError,
+    staffList, staffLoading,
     assignLoading, assignError,
   } = useSelector((s) => s.maintenance);
   const { rooms } = useSelector((s) => s.rooms);
 
-  const [statusFilter,  setStatusFilter]  = useState("");
-  const [showForm,      setShowForm]      = useState(false);
-  const [reportRoom,    setReportRoom]    = useState("");
-  const [reportIssue,   setReportIssue]   = useState("");
-  const [assigningId,   setAssigningId]   = useState(null);
-  const [selectedStaff, setSelectedStaff] = useState("");
+  const [statusTab, setStatusTab] = useState("");
+  const [form, setForm] = useState({ room: "", issue: "" });
+  const [assignTarget, setAssignTarget] = useState(null);
+  const [assignee, setAssignee] = useState("");
 
   useEffect(() => {
-    dispatch(fetchAllRooms());
+    dispatch(fetchPublicRooms());
     dispatch(fetchHousekeepingStaff());
   }, [dispatch]);
 
   useEffect(() => {
-    dispatch(fetchMaintenanceRequests(statusFilter));
-  }, [dispatch, statusFilter]);
+    dispatch(fetchMaintenanceRequests(statusTab));
+  }, [dispatch, statusTab]);
 
+  // Clear the success banner after 3s and refresh the list
   useEffect(() => {
-    if (reportSuccess) {
-      setReportRoom("");
-      setReportIssue("");
-      setShowForm(false);
-      dispatch(fetchMaintenanceRequests(statusFilter));
-      const t = setTimeout(() => dispatch(clearReportState()), 3000);
-      return () => clearTimeout(t);
-    }
-  }, [reportSuccess, dispatch, statusFilter]);
+    if (!reportSuccess) return;
+    setForm({ room: "", issue: "" });
+    dispatch(fetchMaintenanceRequests(statusTab));
+    const id = setTimeout(() => dispatch(clearReportState()), 3000);
+    return () => clearTimeout(id);
+  }, [reportSuccess, dispatch, statusTab]);
 
-  const handleReport = (e) => {
+  const submit = (e) => {
     e.preventDefault();
-    if (!reportRoom || !reportIssue.trim()) return;
-    dispatch(reportMaintenance({ room: reportRoom, issue: reportIssue.trim() }));
+    if (!form.room || !form.issue.trim()) return;
+    dispatch(reportMaintenance({ room: form.room, issue: form.issue.trim() }));
   };
 
-  const openAssign = (req) => {
-    setAssigningId(req._id);
-    setSelectedStaff(req.assignedTo?._id || req.assignedTo?.id || "");
-  };
-
-  const cancelAssign = () => {
-    setAssigningId(null);
-    setSelectedStaff("");
-  };
-
-  const handleAssign = (id) => {
-    if (!selectedStaff) return;
-    dispatch(assignMaintenance({ id, assignedTo: selectedStaff })).then((result) => {
-      if (!result.error) cancelAssign();
-    });
+  const counts = {
+    open: requests.filter((r) => r.status === "open").length,
+    progress: requests.filter((r) => r.status === "in-progress").length,
+    resolved: requests.filter((r) => r.status === "resolved").length,
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header row */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-serif text-[#0B1F2A]">Maintenance Requests</h2>
-        {!hideReportForm && (
-          <button
-            onClick={() => setShowForm((v) => !v)}
-            className="px-4 py-2 bg-[#0B1F2A] text-white text-sm rounded-lg hover:opacity-90 transition"
-          >
-            {showForm ? "Cancel" : "+ Report Issue"}
-          </button>
-        )}
+    <>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-6">
+        <StatCard title="Open" value={counts.open} icon="🚨" accent="#dc2626" loading={loading} />
+        <StatCard title="In Progress" value={counts.progress} icon="🔧" accent="#a16207" loading={loading} />
+        <StatCard title="Resolved" value={counts.resolved} icon="✅" accent="#15803d" loading={loading} />
       </div>
 
-      {/* Report form (collapsible) */}
-      {!hideReportForm && showForm && (
+      <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-6 items-start">
+        {/* Report form */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h3 className="text-sm font-medium text-[#0B1F2A] mb-4">Report Maintenance Issue</h3>
-          {reportError && (
-            <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-md mb-4">
-              {reportError}
-            </div>
-          )}
-          {reportSuccess && (
-            <div className="bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-md mb-4">
-              Issue reported successfully. The room has been flagged for maintenance.
-            </div>
-          )}
-          <form onSubmit={handleReport} className="grid gap-4 sm:grid-cols-2">
+          <h3 className="font-serif text-lg text-[#0B1F2A]">Report New Issue</h3>
+          <p className="text-[13px] text-gray-500 mt-1.5 mb-5">
+            Housekeeping and reception see it the moment you submit.
+          </p>
+
+          <SuccessBanner>{reportSuccess ? "Issue reported. The team has been notified." : null}</SuccessBanner>
+          <ErrorBanner>{reportError}</ErrorBanner>
+
+          <form onSubmit={submit} className="space-y-4">
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Room</label>
+              <label className={label}>Room</label>
               <select
-                value={reportRoom}
-                onChange={(e) => setReportRoom(e.target.value)}
+                value={form.room}
+                onChange={(e) => setForm((f) => ({ ...f, room: e.target.value }))}
                 required
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C9A24B]"
+                className={input}
               >
-                <option value="">Select a room</option>
+                <option value="">Select a room…</option>
                 {rooms.map((r) => (
                   <option key={r._id} value={r._id}>
                     Room {r.roomNumber} — {r.type}
@@ -129,191 +106,138 @@ export default function MaintenanceRequestsView({ hideReportForm = false }) {
                 ))}
               </select>
             </div>
-            <div className="sm:col-span-2">
-              <label className="block text-xs text-gray-500 mb-1">Issue Description</label>
+
+            <div>
+              <label className={label}>Issue</label>
               <textarea
-                value={reportIssue}
-                onChange={(e) => setReportIssue(e.target.value)}
+                rows={4}
+                value={form.issue}
+                onChange={(e) => setForm((f) => ({ ...f, issue: e.target.value }))}
+                placeholder="What needs fixing?"
                 required
-                rows={3}
-                placeholder="Describe the issue in detail…"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C9A24B] resize-none"
+                className={`${input} resize-none`}
               />
             </div>
-            <div className="sm:col-span-2 flex justify-end">
-              <button
-                type="submit"
-                disabled={reportLoading}
-                className="px-5 py-2 bg-[#C9A24B] text-[#0B1F2A] font-medium text-sm rounded-lg hover:opacity-90 disabled:opacity-60"
-              >
-                {reportLoading ? "Submitting…" : "Submit Report"}
-              </button>
-            </div>
+
+            <button type="submit" disabled={reportLoading} className={`${btn.primary} w-full`}>
+              {reportLoading ? "Submitting…" : "Submit Request"}
+            </button>
           </form>
         </div>
-      )}
 
-      {/* Action errors */}
-      {assignError && (
-        <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-md">
-          {assignError}
-        </div>
-      )}
-
-      {/* Filter bar */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex gap-2 flex-wrap">
-        {FILTERS.map(({ key, label }) => (
-          <button
-            key={key}
-            onClick={() => setStatusFilter(key)}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition capitalize ${
-              statusFilter === key
-                ? "bg-[#0B1F2A] text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
-          >
-            {label}
-            {key === "" && ` (${requests.length})`}
-          </button>
-        ))}
-      </div>
-
-      {/* Requests table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        {loading ? (
-          <div className="flex justify-center py-20">
-            <div className="w-8 h-8 border-4 border-[#C9A24B] border-t-transparent rounded-full animate-spin" />
+        {/* Requests table */}
+        <div>
+          <div className="flex flex-wrap items-center gap-3 mb-4">
+            <Pills options={TABS} value={statusTab} onChange={setStatusTab} />
+            <span className="text-sm text-gray-400 ml-auto">
+              {requests.length} request{requests.length === 1 ? "" : "s"}
+            </span>
           </div>
-        ) : error ? (
-          <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-md m-4">
-            {error}
-          </div>
-        ) : requests.length === 0 ? (
-          <div className="py-20 text-center">
-            <p className="text-4xl mb-3">🔧</p>
-            <p className="text-gray-500 font-medium">No maintenance requests</p>
-            <p className="text-gray-400 text-sm mt-1">
-              {statusFilter ? `No ${statusFilter} requests found` : "All clear — no issues reported"}
-            </p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100 bg-gray-50 text-xs uppercase tracking-wide text-gray-400">
-                  <th className="px-5 py-3 text-left">Room</th>
-                  <th className="px-5 py-3 text-left">Issue</th>
-                  <th className="px-5 py-3 text-left">Reported By</th>
-                  <th className="px-5 py-3 text-left">Assigned To</th>
-                  <th className="px-5 py-3 text-center">Status</th>
-                  <th className="px-5 py-3 text-left whitespace-nowrap">Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {requests.map((req) => (
-                  <tr
-                    key={req._id}
-                    className="border-b border-gray-50 hover:bg-gray-50/60 transition-colors"
-                  >
-                    {/* Room */}
-                    <td className="px-5 py-3">
-                      <p className="font-medium text-[#0B1F2A]">
-                        Room {req.room?.roomNumber ?? "—"}
-                      </p>
-                      <p className="text-gray-400 text-xs capitalize">{req.room?.type}</p>
-                    </td>
 
-                    {/* Issue */}
-                    <td className="px-5 py-3 text-gray-700 max-w-xs">
-                      <p className="line-clamp-2">{req.issue}</p>
-                    </td>
+          <ErrorBanner>{updateError || assignError}</ErrorBanner>
 
-                    {/* Reported By */}
-                    <td className="px-5 py-3">
-                      <p className="font-medium text-[#0B1F2A]">{req.reportedBy?.name || "—"}</p>
-                      <p className="text-gray-400 text-xs capitalize">{req.reportedBy?.role}</p>
-                    </td>
+          {loading && <Spinner />}
+          {!loading && error && (
+            <ErrorBanner onRetry={() => dispatch(fetchMaintenanceRequests(statusTab))}>{error}</ErrorBanner>
+          )}
 
-                    {/* Assigned To + Assign/Reassign control */}
-                    <td className="px-5 py-3">
-                      {assigningId === req._id ? (
-                        <div className="flex items-center gap-1.5 flex-wrap">
+          {!loading && !error && (
+            <TableCard>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-100 text-left">
+                    {["Room", "Issue", "Status", "Reported by", "Assigned to", "Reported", "Actions"].map((h) => (
+                      <Th key={h}>{h}</Th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {requests.length === 0 ? (
+                    <tr>
+                      <td colSpan={7}>
+                        <EmptyState icon="🔧" title="Nothing to fix" subtitle="No maintenance requests for this filter." />
+                      </td>
+                    </tr>
+                  ) : (
+                    requests.map((r) => (
+                      <tr key={r._id} className="border-b border-gray-50 hover:bg-gray-50/60 transition-colors">
+                        <td className="px-4 py-3.5 font-semibold text-[#0B1F2A] whitespace-nowrap">
+                          {r.room?.roomNumber ? `Room ${r.room.roomNumber}` : "—"}
+                        </td>
+                        <td className="px-4 py-3.5 text-gray-600 max-w-xs">{r.issue}</td>
+                        <td className="px-4 py-3.5">
                           <select
-                            value={selectedStaff}
-                            onChange={(e) => setSelectedStaff(e.target.value)}
-                            className="text-xs border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[#C9A24B]"
+                            value={r.status}
+                            onChange={(e) => dispatch(updateMaintenanceStatus({ id: r._id, status: e.target.value }))}
+                            disabled={updateLoading === r._id}
+                            className={`text-xs px-2.5 py-1 rounded-full border-0 font-semibold cursor-pointer focus:outline-none ${
+                              r.status === "open" ? "bg-red-100 text-red-600"
+                              : r.status === "in-progress" ? "bg-yellow-100 text-yellow-700"
+                              : "bg-green-100 text-green-700"
+                            }`}
                           >
-                            <option value="">Select staff…</option>
-                            {staffList.map((s) => (
-                              <option key={s.id || s._id} value={s.id || s._id}>
-                                {s.name}
-                              </option>
+                            {STATUS_OPTIONS.map((s) => (
+                              <option key={s} value={s}>{s.replace("-", " ")}</option>
                             ))}
                           </select>
+                        </td>
+                        <td className="px-4 py-3.5 text-gray-500 whitespace-nowrap">{r.reportedBy?.name || "—"}</td>
+                        <td className="px-4 py-3.5 text-gray-500 whitespace-nowrap">
+                          {r.assignedTo?.name || <span className="text-gray-300">Unassigned</span>}
+                        </td>
+                        <td className="px-4 py-3.5 text-xs text-gray-400 whitespace-nowrap">{fmtDate(r.createdAt)}</td>
+                        <td className="px-4 py-3.5">
                           <button
-                            onClick={() => handleAssign(req._id)}
-                            disabled={!selectedStaff || assignLoading === req._id}
-                            className="text-xs px-2 py-1 bg-[#0B1F2A] text-white rounded hover:opacity-90 disabled:opacity-50 whitespace-nowrap"
+                            onClick={() => { setAssignTarget(r); setAssignee(r.assignedTo?._id || ""); }}
+                            disabled={assignLoading === r._id}
+                            className={btn.ghostGold}
                           >
-                            {assignLoading === req._id ? "…" : "Confirm"}
+                            {r.assignedTo ? "Reassign" : "Assign"}
                           </button>
-                          <button
-                            onClick={cancelAssign}
-                            className="text-xs text-gray-400 hover:text-gray-600 px-1"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      ) : req.assignedTo ? (
-                        <div>
-                          <p className="font-medium text-[#0B1F2A] text-sm">{req.assignedTo.name}</p>
-                          <p className="text-xs text-gray-400 capitalize">{req.assignedTo.role}</p>
-                          <button
-                            onClick={() => openAssign(req)}
-                            className="text-xs text-[#C9A24B] hover:underline"
-                          >
-                            Reassign
-                          </button>
-                        </div>
-                      ) : (
-                        <div>
-                          <p className="text-xs text-gray-400 mb-0.5">Unassigned</p>
-                          <button
-                            onClick={() => openAssign(req)}
-                            className="text-xs text-[#C9A24B] hover:underline"
-                          >
-                            + Assign
-                          </button>
-                        </div>
-                      )}
-                    </td>
-
-                    {/* Status badge — read-only; only housekeeping can change status */}
-                    <td className="px-5 py-3 text-center">
-                      <span
-                        className={`px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize ${
-                          STATUS_COLORS[req.status] || "bg-gray-100 text-gray-600"
-                        }`}
-                      >
-                        {req.status}
-                      </span>
-                    </td>
-
-                    {/* Date */}
-                    <td className="px-5 py-3 text-gray-500 text-xs whitespace-nowrap">
-                      {new Date(req.createdAt).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </TableCard>
+          )}
+        </div>
       </div>
-    </div>
+
+      {assignTarget && (
+        <Modal
+          title={`Assign Room ${assignTarget.room?.roomNumber || ""}`}
+          onClose={() => setAssignTarget(null)}
+          footer={
+            <>
+              <button onClick={() => setAssignTarget(null)} className={btn.secondary}>Cancel</button>
+              <button
+                onClick={() =>
+                  dispatch(assignMaintenance({ id: assignTarget._id, assignedTo: assignee })).then(
+                    (r) => !r.error && setAssignTarget(null)
+                  )
+                }
+                disabled={!assignee || assignLoading === assignTarget._id}
+                className={btn.primary}
+              >
+                {assignLoading === assignTarget._id ? "Assigning…" : "Assign"}
+              </button>
+            </>
+          }
+        >
+          <p className="text-sm text-gray-500">{assignTarget.issue}</p>
+          <div>
+            <label className={label}>Housekeeping staff</label>
+            <select value={assignee} onChange={(e) => setAssignee(e.target.value)} className={input}>
+              <option value="">{staffLoading ? "Loading staff…" : "Select a team member…"}</option>
+              {staffList.map((st) => (
+                <option key={st._id} value={st._id}>{st.name}</option>
+              ))}
+            </select>
+          </div>
+        </Modal>
+      )}
+    </>
   );
 }

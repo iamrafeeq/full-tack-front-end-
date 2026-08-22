@@ -10,8 +10,8 @@ import {
   payBooking,
 } from "../../../redux/slice/Booking/bookingSlice";
 import AdminLayout from "../../../components/admin/AdminLayout";
-import { fmt } from "../../../components/admin/invoices/invoiceHelpers";
-import { downloadInvoicePdf } from "../../../components/admin/invoices/invoiceHelpers";
+import { fmt, fmtMethod, downloadInvoicePdf } from "../../../components/admin/invoices/invoiceHelpers";
+import { fetchPaymentByBooking, clearBookingPayment } from "../../../redux/slice/payments/paymentsSlice";
 
 // Status badge styles
 const STATUS_STYLES = {
@@ -41,6 +41,8 @@ export default function AdminBookings() {
     cancelLoading, cancelError,
     payLoading, payError,
   } = useSelector((state) => state.bookings);
+
+  const { bookingPayment, bookingPaymentLoading } = useSelector((state) => state.payments);
 
   const [search,          setSearch]          = useState("");
   const [statusFilter,    setStatusFilter]    = useState("all");
@@ -123,11 +125,13 @@ export default function AdminBookings() {
 
   const openDetail = (id) => {
     dispatch(fetchBookingById(id));
+    dispatch(fetchPaymentByBooking(id));
     setDetailModal(true);
   };
   const closeDetail = () => {
     setDetailModal(false);
     dispatch(clearSingleBooking());
+    dispatch(clearBookingPayment());
   };
 
   const handleCollectPay = () => {
@@ -449,6 +453,28 @@ export default function AdminBookings() {
                       <p className="font-medium text-[#0B1F2A]">{fmtDate(singleBooking.createdAt)}</p>
                     </div>
                   </div>
+
+                  {/* Payment info */}
+                  <div className="pt-3 border-t border-gray-100">
+                    <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">Payment</p>
+                    {bookingPaymentLoading ? (
+                      <p className="text-xs text-gray-400">Loading…</p>
+                    ) : bookingPayment ? (
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-green-100 text-green-700 w-fit">
+                          Paid
+                        </span>
+                        <p className="text-xs text-gray-500">
+                          via {fmtMethod(bookingPayment.method)}
+                          {bookingPayment.paidAt && ` · ${fmtDate(bookingPayment.paidAt)}`}
+                        </p>
+                      </div>
+                    ) : (
+                      <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-yellow-100 text-yellow-700 w-fit">
+                        Not yet paid
+                      </span>
+                    )}
+                  </div>
                 </div>
               ) : (
                 <p className="text-center text-gray-400 py-8">Could not load booking details.</p>
@@ -602,6 +628,14 @@ export default function AdminBookings() {
                   {invoiceConfirm.invoice.paymentStatus === "paid" ? "Paid" : "Pending"}
                 </span>
               </div>
+              {invoiceConfirm.invoice.paymentDetails && invoiceConfirm.invoice.paymentStatus === "paid" && (
+                <p className="text-xs text-gray-500 text-right">
+                  via <span className="font-medium">{fmtMethod(invoiceConfirm.invoice.paymentDetails.method)}</span>
+                  {invoiceConfirm.invoice.paymentDetails.paidAt && (
+                    <> · {fmtDate(invoiceConfirm.invoice.paymentDetails.paidAt)}</>
+                  )}
+                </p>
+              )}
             </div>
 
             <div className="flex gap-3">

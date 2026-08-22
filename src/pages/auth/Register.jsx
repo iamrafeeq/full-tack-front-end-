@@ -39,15 +39,15 @@ function Register() {
 
   const validateField = (fieldName, value) => {
     switch (fieldName) {
-      case "name":         return runValidators(value, [required, validName]);
-      case "email":        return runValidators(value, [required, validEmail]);
-      case "password":     return runValidators(value, [required, strongPassword]);
+      case "name":         return runValidators(value, [(v) => required(v, "full name"), validName]);
+      case "email":        return runValidators(value, [(v) => required(v, "email address"), validEmail]);
+      case "password":     return runValidators(value, [(v) => required(v, "password"), strongPassword]);
       case "confirmPassword": return matchPassword(formData.password, value) || (value ? undefined : "Please confirm your password.");
-      case "phone":        return runValidators(value, [required, validPhone]);
+      case "phone":        return runValidators(value, [(v) => required(v, "phone number"), validPhone]);
       case "Date_OF_Birth": return validDateOfBirth(value);
-      case "Nationality":  return runValidators(value, [required, validNationality]);
-      case "Address":      return required(value, "Address");
-      case "CNIC_Passport_Number": return runValidators(value, [required, validCNIC]);
+      case "Nationality":  return runValidators(value, [(v) => required(v, "nationality"), validNationality]);
+      case "Address":      return required(value, "address");
+      case "CNIC_Passport_Number": return runValidators(value, [(v) => required(v, "CNIC or Passport number"), validCNIC]);
       default:             return undefined;
     }
   };
@@ -119,21 +119,42 @@ function Register() {
     ) : null;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#0B1F2A] px-4 py-10">
-      <div className="bg-white w-full max-w-md rounded-lg p-8">
-        <h1 className="text-2xl font-serif text-[#0B1F2A] mb-1">Create Account</h1>
-        <p className="text-sm text-gray-500 mb-6">Join LuxuryStay Hospitality</p>
+ <div className="min-h-screen flex items-center justify-center bg-[#0B1F2A] px-4 py-[120px] relative">
+  {/* subtle vignette */}
+  <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(201,162,75,0.08),transparent_60%)]" />
 
-        {error && (
-          <div className="mb-4 px-4 py-2.5 bg-red-50 border border-red-200 rounded-md text-sm text-red-600">
-            {error}
-          </div>
-        )}
+  <div className="relative w-full max-w-lg">
+    {/* seal */}
+    <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-[#0B1F2A] border-2 border-[#C9A24B] flex items-center justify-center z-10">
+      <span className="font-serif text-[#C9A24B] text-sm tracking-wider">LS</span>
+    </div>
 
-        <form onSubmit={handleSubmit} noValidate className="space-y-4">
-          {/* Full Name */}
+    <div className="bg-[#FBF8F2] border border-[#C9A24B]/30 shadow-2xl px-8 py-12 sm:px-12">
+      <div className="text-center mb-10">
+        <p className="text-[10px] tracking-[0.25em] text-[#C9A24B] uppercase mb-3">
+          LuxuryStay Hospitality
+        </p>
+        <h1 className="text-3xl font-serif text-[#0B1F2A]">Guest Registration</h1>
+        <div className="w-10 h-px bg-[#C9A24B] mx-auto mt-4" />
+      </div>
+
+      {error && (
+        <div className="mb-8 pl-4 py-3 border-l-2 border-[#8B3A3A] bg-[#8B3A3A]/5 text-sm text-[#8B3A3A]">
+          {error}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} noValidate className="space-y-10">
+        {/* Section 01 — Guest Details */}
+        <div className="space-y-5">
+          <p className="text-[11px] tracking-[0.2em] text-[#0B1F2A]/50 uppercase">
+            01 &middot; Guest Details
+          </p>
+
           <div>
-            <label className="block text-sm mb-1 text-[#0B1F2A]">Full Name</label>
+            <label className="block text-[11px] tracking-[0.1em] uppercase text-[#0B1F2A]/60 mb-1.5">
+              Full Name
+            </label>
             <input
               type="text"
               name="name"
@@ -146,9 +167,10 @@ function Register() {
             <FieldError field="name" />
           </div>
 
-          {/* Email */}
           <div>
-            <label className="block text-sm mb-1 text-[#0B1F2A]">Email</label>
+            <label className="block text-[11px] tracking-[0.1em] uppercase text-[#0B1F2A]/60 mb-1.5">
+              Email
+            </label>
             <input
               type="email"
               name="email"
@@ -161,9 +183,10 @@ function Register() {
             <FieldError field="email" />
           </div>
 
-          {/* Phone */}
           <div>
-            <label className="block text-sm mb-1 text-[#0B1F2A]">Phone Number</label>
+            <label className="block text-[11px] tracking-[0.1em] uppercase text-[#0B1F2A]/60 mb-1.5">
+              Phone Number
+            </label>
             <input
               type="tel"
               name="phone"
@@ -176,38 +199,50 @@ function Register() {
             <FieldError field="phone" />
           </div>
 
-          {/* Date of Birth */}
-          <div>
-            <label className="block text-sm mb-1 text-[#0B1F2A]">Date of Birth</label>
-            <input
-              type="date"
-              name="Date_OF_Birth"
-              value={Date_OF_Birth}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              className={inputClass("Date_OF_Birth")}
-            />
-            <FieldError field="Date_OF_Birth" />
-          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[11px] tracking-[0.1em] uppercase text-[#0B1F2A]/60 mb-1.5">
+                Date of Birth
+              </label>
+              <input
+                type="date"
+                name="Date_OF_Birth"
+                value={Date_OF_Birth}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                className={inputClass("Date_OF_Birth")}
+              />
+              <FieldError field="Date_OF_Birth" />
+            </div>
 
-          {/* Nationality */}
-          <div>
-            <label className="block text-sm mb-1 text-[#0B1F2A]">Nationality</label>
-            <input
-              type="text"
-              name="Nationality"
-              value={Nationality}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              className={inputClass("Nationality")}
-              placeholder="e.g. Pakistani"
-            />
-            <FieldError field="Nationality" />
+            <div>
+              <label className="block text-[11px] tracking-[0.1em] uppercase text-[#0B1F2A]/60 mb-1.5">
+                Nationality
+              </label>
+              <input
+                type="text"
+                name="Nationality"
+                value={Nationality}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                className={inputClass("Nationality")}
+                placeholder="Pakistani"
+              />
+              <FieldError field="Nationality" />
+            </div>
           </div>
+        </div>
 
-          {/* Address */}
+        {/* Section 02 — Identification */}
+        <div className="space-y-5 pt-8 border-t border-[#C9A24B]/25">
+          <p className="text-[11px] tracking-[0.2em] text-[#0B1F2A]/50 uppercase">
+            02 &middot; Identification
+          </p>
+
           <div>
-            <label className="block text-sm mb-1 text-[#0B1F2A]">Address</label>
+            <label className="block text-[11px] tracking-[0.1em] uppercase text-[#0B1F2A]/60 mb-1.5">
+              Address
+            </label>
             <input
               type="text"
               name="Address"
@@ -220,9 +255,10 @@ function Register() {
             <FieldError field="Address" />
           </div>
 
-          {/* CNIC / Passport */}
           <div>
-            <label className="block text-sm mb-1 text-[#0B1F2A]">CNIC / Passport Number</label>
+            <label className="block text-[11px] tracking-[0.1em] uppercase text-[#0B1F2A]/60 mb-1.5">
+              CNIC / Passport Number
+            </label>
             <input
               type="text"
               name="CNIC_Passport_Number"
@@ -230,14 +266,22 @@ function Register() {
               onChange={handleChange}
               onBlur={handleBlur}
               className={inputClass("CNIC_Passport_Number")}
-              placeholder="e.g. 42201-1234567-1"
+              placeholder="42201-1234567-1"
             />
             <FieldError field="CNIC_Passport_Number" />
           </div>
+        </div>
 
-          {/* Password */}
+        {/* Section 03 — Security */}
+        <div className="space-y-5 pt-8 border-t border-[#C9A24B]/25">
+          <p className="text-[11px] tracking-[0.2em] text-[#0B1F2A]/50 uppercase">
+            03 &middot; Security
+          </p>
+
           <div>
-            <label className="block text-sm mb-1 text-[#0B1F2A]">Password</label>
+            <label className="block text-[11px] tracking-[0.1em] uppercase text-[#0B1F2A]/60 mb-1.5">
+              Password
+            </label>
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
@@ -251,22 +295,23 @@ function Register() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-2 text-xs text-gray-500 hover:text-[#C9A24B]"
+                className="absolute right-0 top-2.5 text-[10px] tracking-[0.15em] uppercase text-[#C9A24B] hover:text-[#0B1F2A]"
               >
                 {showPassword ? "Hide" : "Show"}
               </button>
             </div>
             <FieldError field="password" />
             {!errors.password && password && (
-              <p className="text-gray-400 text-xs mt-1">
+              <p className="text-[#0B1F2A]/40 text-xs mt-1.5">
                 Must include a letter, a number, and a special character (!@#$_-).
               </p>
             )}
           </div>
 
-          {/* Confirm Password */}
           <div>
-            <label className="block text-sm mb-1 text-[#0B1F2A]">Confirm Password</label>
+            <label className="block text-[11px] tracking-[0.1em] uppercase text-[#0B1F2A]/60 mb-1.5">
+              Confirm Password
+            </label>
             <input
               type={showPassword ? "text" : "password"}
               name="confirmPassword"
@@ -278,24 +323,26 @@ function Register() {
             />
             <FieldError field="confirmPassword" />
           </div>
+        </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-[#0B1F2A] text-white py-2.5 rounded-md font-medium hover:opacity-90 disabled:opacity-60"
-          >
-            {loading ? "Registering..." : "Register"}
-          </button>
-        </form>
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-[#0B1F2A] text-[#FBF8F2] py-3.5 mt-2 text-[11px] tracking-[0.2em] uppercase border border-[#0B1F2A] hover:bg-[#0B1F2A]/90 hover:border-[#C9A24B] transition-colors disabled:opacity-50"
+        >
+          {loading ? "Registering..." : "Register"}
+        </button>
+      </form>
 
-        <p className="text-center text-sm text-gray-500 mt-6">
-          Already have an account?{" "}
-          <Link to="/login" className="text-[#C9A24B] font-medium hover:underline">
-            Sign In
-          </Link>
-        </p>
-      </div>
+      <p className="text-center text-sm text-[#0B1F2A]/50 mt-8">
+        Already have an account?{" "}
+        <Link to="/login" className="text-[#C9A24B] font-medium hover:underline">
+          Sign In
+        </Link>
+      </p>
     </div>
+  </div>
+</div>
   );
 }
 
