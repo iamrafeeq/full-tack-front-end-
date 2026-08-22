@@ -1,9 +1,9 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import axios from "axios";
+import api from "../../../api/axios";
 
 export const AuthLogin = createAsyncThunk("authentication/AuthLogin", async (userData, { rejectWithValue }) => {
     try {
-        const response = await axios.post("http://localhost:5000/api/login", userData);
+        const response = await api.post("/api/login", userData);
         return response.data;
     } catch (error) {
         return rejectWithValue(error.response?.data?.message || "Network error — is the server running?");
@@ -13,7 +13,7 @@ export const AuthLogin = createAsyncThunk("authentication/AuthLogin", async (use
 export const getSingleUser = createAsyncThunk("authentication/getSingleUser", async (userId, { rejectWithValue }) => {
     try {
         const token = localStorage.getItem("token");
-        const response = await axios.get(`http://localhost:5000/api/singleuser/${userId}`, {
+        const response = await api.get(`/api/singleuser/${userId}`, {
             headers: { Authorization: `Bearer ${token}` },
         });
         return response.data;

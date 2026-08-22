@@ -1,12 +1,12 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios from "axios";
+import api from "../../../api/axios";
 
-const BASE = "http://localhost:5000/api/notifications";
+const BASE = "/api/notifications";
 const authHeader = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } });
 
 export const fetchUnreadCount = createAsyncThunk("notifications/unreadCount", async (_, { rejectWithValue }) => {
   try {
-    const res = await axios.get(`${BASE}/unread-count`, authHeader());
+    const res = await api.get(`${BASE}/unread-count`, authHeader());
     return res.data;
   } catch (err) {
     return rejectWithValue(err.response?.data?.message || "Failed to fetch count");
@@ -15,7 +15,7 @@ export const fetchUnreadCount = createAsyncThunk("notifications/unreadCount", as
 
 export const fetchNotifications = createAsyncThunk("notifications/fetchAll", async (_, { rejectWithValue }) => {
   try {
-    const res = await axios.get(BASE, authHeader());
+    const res = await api.get(BASE, authHeader());
     return res.data;
   } catch (err) {
     return rejectWithValue(err.response?.data?.message || "Failed to fetch notifications");
@@ -24,7 +24,7 @@ export const fetchNotifications = createAsyncThunk("notifications/fetchAll", asy
 
 export const markRead = createAsyncThunk("notifications/markRead", async (id, { rejectWithValue }) => {
   try {
-    await axios.put(`${BASE}/${id}/read`, {}, authHeader());
+    await api.put(`${BASE}/${id}/read`, {}, authHeader());
     return id;
   } catch (err) {
     return rejectWithValue(err.response?.data?.message || "Failed to mark read");
@@ -33,7 +33,7 @@ export const markRead = createAsyncThunk("notifications/markRead", async (id, { 
 
 export const markAllRead = createAsyncThunk("notifications/markAllRead", async (_, { rejectWithValue }) => {
   try {
-    await axios.put(`${BASE}/mark-all-read`, {}, authHeader());
+    await api.put(`${BASE}/mark-all-read`, {}, authHeader());
     return true;
   } catch (err) {
     return rejectWithValue(err.response?.data?.message || "Failed to mark all read");

@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios from "axios";
+import api from "../../../api/axios";
 
-const BASE = "http://localhost:5000/api/reports";
+const BASE = "/api/reports";
 
 const authHeader = () => ({
   headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
@@ -16,7 +16,7 @@ export const fetchDashboardStats = createAsyncThunk(
       if (endDate)   params.append("endDate",   endDate);
       const qs  = params.toString();
       const url = qs ? `${BASE}/dashboard?${qs}` : `${BASE}/dashboard`;
-      const res = await axios.get(url, authHeader());
+      const res = await api.get(url, authHeader());
       return res.data;
     } catch (err) {
       return rejectWithValue(

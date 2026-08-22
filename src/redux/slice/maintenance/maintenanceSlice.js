@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios from "axios";
+import api from "../../../api/axios";
 
-const BASE = "http://localhost:5000/api/housekeeping";
+const BASE = "/api/housekeeping";
 
 const authHeader = () => ({
   headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
@@ -14,7 +14,7 @@ export const fetchMaintenanceRequests = createAsyncThunk(
       const url = status
         ? `${BASE}/maintenance?status=${status}`
         : `${BASE}/maintenance`;
-      const res = await axios.get(url, authHeader());
+      const res = await api.get(url, authHeader());
       return res.data.requests;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to fetch maintenance requests");
@@ -26,7 +26,7 @@ export const reportMaintenance = createAsyncThunk(
   "maintenance/report",
   async ({ room, issue }, { rejectWithValue }) => {
     try {
-      const res = await axios.post(`${BASE}/maintenance`, { room, issue }, authHeader());
+      const res = await api.post(`${BASE}/maintenance`, { room, issue }, authHeader());
       return res.data.request;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to report issue");
@@ -38,7 +38,7 @@ export const updateMaintenanceStatus = createAsyncThunk(
   "maintenance/updateStatus",
   async ({ id, status }, { rejectWithValue }) => {
     try {
-      await axios.patch(`${BASE}/maintenance/${id}`, { status }, authHeader());
+      await api.patch(`${BASE}/maintenance/${id}`, { status }, authHeader());
       return { id, status };
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to update status");
@@ -50,7 +50,7 @@ export const fetchHousekeepingStaff = createAsyncThunk(
   "maintenance/fetchHousekeepingStaff",
   async (_, { rejectWithValue }) => {
     try {
-      const res = await axios.get(`${BASE}/maintenance/housekeeping-staff`, authHeader());
+      const res = await api.get(`${BASE}/maintenance/housekeeping-staff`, authHeader());
       return res.data.staff;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to fetch housekeeping staff");
@@ -62,7 +62,7 @@ export const assignMaintenance = createAsyncThunk(
   "maintenance/assign",
   async ({ id, assignedTo }, { rejectWithValue }) => {
     try {
-      const res = await axios.put(`${BASE}/maintenance/${id}/assign`, { assignedTo }, authHeader());
+      const res = await api.put(`${BASE}/maintenance/${id}/assign`, { assignedTo }, authHeader());
       return res.data.request;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to assign maintenance request");
@@ -77,7 +77,7 @@ export const fetchMyTasks = createAsyncThunk(
       const url = status
         ? `${BASE}/maintenance/my-tasks?status=${status}`
         : `${BASE}/maintenance/my-tasks`;
-      const res = await axios.get(url, authHeader());
+      const res = await api.get(url, authHeader());
       return res.data.tasks;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to fetch your tasks");

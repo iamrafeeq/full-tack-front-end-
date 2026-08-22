@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import axios from "axios";
+import api from "../../../api/axios";
 
-const BASE = "http://localhost:5000/api/invoices";
+const BASE = "/api/invoices";
 
 const authHeader = () => ({
   headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
@@ -17,7 +17,7 @@ export const generateInvoice = createAsyncThunk(
   "invoices/generateInvoice",
   async (invoiceData, { rejectWithValue }) => {
     try {
-      const res = await axios.post(`${BASE}/generate`, invoiceData, authHeader());
+      const res = await api.post(`${BASE}/generate`, invoiceData, authHeader());
       return res.data; // { success, invoice }
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to generate invoice.");
@@ -30,7 +30,7 @@ export const fetchInvoices = createAsyncThunk(
   "invoices/fetchInvoices",
   async (_, { rejectWithValue }) => {
     try {
-      const res = await axios.get(`${BASE}/`, authHeader());
+      const res = await api.get(`${BASE}/`, authHeader());
       return res.data; // { success, invoices }
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to fetch invoices.");
@@ -43,7 +43,7 @@ export const fetchInvoiceById = createAsyncThunk(
   "invoices/fetchInvoiceById",
   async (id, { rejectWithValue }) => {
     try {
-      const res = await axios.get(`${BASE}/${id}`, authHeader());
+      const res = await api.get(`${BASE}/${id}`, authHeader());
       return res.data; // { success, invoice }
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to fetch invoice.");
@@ -56,7 +56,7 @@ export const markInvoicePaid = createAsyncThunk(
   "invoices/markInvoicePaid",
   async (id, { rejectWithValue }) => {
     try {
-      const res = await axios.patch(`${BASE}/markpaid/${id}`, {}, authHeader());
+      const res = await api.patch(`${BASE}/markpaid/${id}`, {}, authHeader());
       return res.data; // { success, message, invoice }
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to mark invoice as paid.");

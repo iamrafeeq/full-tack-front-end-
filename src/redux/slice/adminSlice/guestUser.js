@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import axios from "axios";
+import api from "../../../api/axios";
 
 const authHeader = () => ({
   headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
@@ -10,7 +10,7 @@ export const guestUserAPI = createAsyncThunk(
   "guestUser/guestUserAPI",
   async (_, { rejectWithValue }) => {
     try {
-      const res = await axios.get("http://localhost:5000/api/guestuser", authHeader());
+      const res = await api.get("/api/guestuser", authHeader());
       return res.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || "Network error — is the server running?");
@@ -23,8 +23,8 @@ export const updateUserStatus = createAsyncThunk(
   "guestUser/updateUserStatus",
   async ({ id, isActive }, { rejectWithValue }) => {
     try {
-      const res = await axios.put(
-        `http://localhost:5000/api/updateuserstatus/${id}`,
+      const res = await api.put(
+        `/api/updateuserstatus/${id}`,
         { isActive },
         authHeader()
       );
@@ -40,8 +40,8 @@ export const updateUserRole = createAsyncThunk(
   "guestUser/updateUserRole",
   async ({ id, role }, { rejectWithValue }) => {
     try {
-      const res = await axios.put(
-        `http://localhost:5000/api/updateuserrole/${id}`,
+      const res = await api.put(
+        `/api/updateuserrole/${id}`,
         { role },
         authHeader()
       );

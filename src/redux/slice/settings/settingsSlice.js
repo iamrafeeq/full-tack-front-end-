@@ -1,12 +1,12 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios from "axios";
+import api from "../../../api/axios";
 
-const BASE = "http://localhost:5000/api/settings";
+const BASE = "/api/settings";
 const authHeader = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } });
 
 export const fetchSettings = createAsyncThunk("settings/fetch", async (_, { rejectWithValue }) => {
   try {
-    const res = await axios.get(BASE, authHeader());
+    const res = await api.get(BASE, authHeader());
     return res.data;
   } catch (err) {
     return rejectWithValue(err.response?.data?.message || "Failed to load settings");
@@ -15,7 +15,7 @@ export const fetchSettings = createAsyncThunk("settings/fetch", async (_, { reje
 
 export const updateSettings = createAsyncThunk("settings/update", async (payload, { rejectWithValue }) => {
   try {
-    const res = await axios.put(BASE, payload, authHeader());
+    const res = await api.put(BASE, payload, authHeader());
     return res.data;
   } catch (err) {
     return rejectWithValue(err.response?.data?.message || "Failed to save settings");

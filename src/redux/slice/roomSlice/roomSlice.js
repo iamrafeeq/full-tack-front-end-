@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import axios from "axios";
+import api from "../../../api/axios";
 
-const BASE = "http://localhost:5000/api";
+const BASE = "/api";
 
 // Only attach the token if one exists — GET room routes are public,
 // so unauthenticated users must not send "Bearer null"
@@ -21,7 +21,7 @@ export const fetchAllRooms = createAsyncThunk(
     try {
       const params = new URLSearchParams({ limit: 100 });
       if (includeInactive) params.set("includeInactive", "true");
-      const res = await axios.get(`${BASE}/getallrooms?${params}`, authHeader());
+      const res = await api.get(`${BASE}/getallrooms?${params}`, authHeader());
       return res.data; // { success, total, rooms }
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to fetch rooms.");
@@ -35,7 +35,7 @@ export const fetchPublicRooms = createAsyncThunk(
   "rooms/fetchPublicRooms",
   async (_, { rejectWithValue }) => {
     try {
-      const res = await axios.get(`${BASE}/getallrooms?limit=100`, authHeader());
+      const res = await api.get(`${BASE}/getallrooms?limit=100`, authHeader());
       return res.data; // { success, total, rooms }
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to fetch rooms.");
@@ -48,7 +48,7 @@ export const fetchSingleRoom = createAsyncThunk(
   "rooms/fetchSingleRoom",
   async (id, { rejectWithValue }) => {
     try {
-      const res = await axios.get(`${BASE}/getroom/${id}`, authHeader());
+      const res = await api.get(`${BASE}/getroom/${id}`, authHeader());
       return res.data; // { success, room }
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to fetch room.");
@@ -61,7 +61,7 @@ export const createRoom = createAsyncThunk(
   "rooms/createRoom",
   async (roomData, { rejectWithValue }) => {
     try {
-      const res = await axios.post(`${BASE}/createroom`, roomData, authHeader());
+      const res = await api.post(`${BASE}/createroom`, roomData, authHeader());
       return res.data; // { success, message, room }
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to create room.");
@@ -74,7 +74,7 @@ export const updateRoom = createAsyncThunk(
   "rooms/updateRoom",
   async ({ id, roomData }, { rejectWithValue }) => {
     try {
-      const res = await axios.put(`${BASE}/updateroom/${id}`, roomData, authHeader());
+      const res = await api.put(`${BASE}/updateroom/${id}`, roomData, authHeader());
       return res.data; // { success, message, room }
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to update room.");
@@ -87,7 +87,7 @@ export const updateRoomStatus = createAsyncThunk(
   "rooms/updateRoomStatus",
   async ({ id, status }, { rejectWithValue }) => {
     try {
-      const res = await axios.patch(`${BASE}/updatestatus/${id}`, { status }, authHeader());
+      const res = await api.patch(`${BASE}/updatestatus/${id}`, { status }, authHeader());
       return res.data; // { success, message, room }
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to update status.");
@@ -102,7 +102,7 @@ export const fetchAvailableRooms = createAsyncThunk(
     try {
       const params = new URLSearchParams({ checkIn, checkOut });
       if (guests && Number(guests) > 1) params.set("guests", guests);
-      const res = await axios.get(`${BASE}/available?${params}`);
+      const res = await api.get(`${BASE}/available?${params}`);
       return res.data; // { success, count, rooms }
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to check availability.");
@@ -116,7 +116,7 @@ export const deleteRoom = createAsyncThunk(
   "rooms/deleteRoom",
   async (id, { rejectWithValue }) => {
     try {
-      await axios.delete(`${BASE}/deleteroom/${id}`, authHeader());
+      await api.delete(`${BASE}/deleteroom/${id}`, authHeader());
       return id;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to delete room.");
@@ -130,7 +130,7 @@ export const deactivateRoom = createAsyncThunk(
   "rooms/deactivateRoom",
   async (id, { rejectWithValue }) => {
     try {
-      const res = await axios.put(`${BASE}/deactivateroom/${id}`, {}, authHeader());
+      const res = await api.put(`${BASE}/deactivateroom/${id}`, {}, authHeader());
       return res.data; // { success, room }
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to deactivate room.");
@@ -143,7 +143,7 @@ export const activateRoom = createAsyncThunk(
   "rooms/activateRoom",
   async (id, { rejectWithValue }) => {
     try {
-      const res = await axios.put(`${BASE}/activateroom/${id}`, {}, authHeader());
+      const res = await api.put(`${BASE}/activateroom/${id}`, {}, authHeader());
       return res.data; // { success, room }
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to activate room.");

@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import axios from "axios";
+import api from "../../../api/axios";
 
-const BASE = "http://localhost:5000/api/contact";
+const BASE = "/api/contact";
 
 const authHeader = () => {
   const token = localStorage.getItem("token");
@@ -15,7 +15,7 @@ export const submitContact = createAsyncThunk(
   "contact/submit",
   async ({ name, email, phone, subject, message }, { rejectWithValue }) => {
     try {
-      const res = await axios.post(BASE, { name, email, phone, subject, message });
+      const res = await api.post(BASE, { name, email, phone, subject, message });
       return res.data; // { success, message, contact }
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to send message.");
@@ -28,7 +28,7 @@ export const fetchMessages = createAsyncThunk(
   "contact/fetchAll",
   async (_, { rejectWithValue }) => {
     try {
-      const res = await axios.get(BASE, authHeader());
+      const res = await api.get(BASE, authHeader());
       return res.data; // { success, count, messages }
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to fetch messages.");
@@ -41,7 +41,7 @@ export const deleteMessage = createAsyncThunk(
   "contact/delete",
   async (id, { rejectWithValue }) => {
     try {
-      await axios.delete(`${BASE}/${id}`, authHeader());
+      await api.delete(`${BASE}/${id}`, authHeader());
       return id;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to delete message.");

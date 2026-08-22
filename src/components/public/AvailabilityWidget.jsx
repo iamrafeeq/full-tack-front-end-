@@ -5,6 +5,7 @@ import {
   fetchAvailableRooms,
   clearAvailability,
 } from "../../redux/slice/roomSlice/roomSlice";
+import { apiBase } from "../../api/axios";
 
 const TYPE_IMAGES = {
   single: "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=900&q=80",
@@ -228,7 +229,7 @@ export default function AvailabilityWidget() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {results.slice(0, 3).map((room) => {
                     const img = room.images?.[0]
-                      ? `http://localhost:5000/${room.images[0]}`
+                      ? `${apiBase}/${room.images[0]}`
                       : TYPE_IMAGES[room.type] || DEFAULT_IMAGE;
                     const price    = room.discountPrice || room.price;
                     const on       = selected === room._id;

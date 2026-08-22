@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchSingleRoom, clearSingleRoom } from "../../redux/slice/roomSlice/roomSlice";
+import { apiBase } from "../../api/axios";
 
 // Room type → image mapping (rooms in DB don't have image fields)
 const TYPE_IMAGES = {
@@ -64,12 +65,12 @@ function RoomDetails() {
 
   // Use first uploaded image if available, otherwise fall back to type placeholder
   const image = room.images?.[0]
-    ? `http://localhost:5000/${room.images[0]}`
+    ? `${apiBase}/${room.images[0]}`
     : (TYPE_IMAGES[room.type] || DEFAULT_IMAGE);
 
   // Gallery — use all uploaded images, or repeat the main image as placeholder
   const gallery = room.images?.length > 0
-    ? room.images.map((img) => `http://localhost:5000/${img}`)
+    ? room.images.map((img) => `${apiBase}/${img}`)
     : [image, image, image];
   const price       = room.discountPrice || room.price;
   const isAvail     = room.status !== "maintenance";

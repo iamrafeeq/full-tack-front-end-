@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { createRoom, updateRoom, clearFormErrors } from "../../../redux/slice/roomSlice/roomSlice";
+import { apiBase } from "../../../api/axios";
 
 const ROOM_TYPES = ["single", "double", "deluxe", "suite"];
 const BED_TYPES  = ["single", "twin", "queen", "king"];
@@ -260,7 +261,7 @@ export default function RoomFormModal({ editRoom, onClose, onSuccess }) {
                   {editRoom.images.map((img, i) => (
                     <img
                       key={i}
-                      src={`http://localhost:5000/${img}`}
+                      src={`${apiBase}/${img}`}
                       alt={`Current room image ${i + 1}`}
                       className="h-20 w-20 rounded-lg object-cover border border-gray-200"
                     />

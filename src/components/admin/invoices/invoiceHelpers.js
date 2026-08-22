@@ -1,3 +1,5 @@
+import { apiBase } from "../../../api/axios";
+
 export const fmt = (n) =>
   `$${Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
 
@@ -30,7 +32,7 @@ export const fmtMethod = (m) => METHOD_LABELS[m] || (m ? m.replace(/_/g, " ") : 
 export const downloadInvoicePdf = async (invoiceId) => {
   const token = localStorage.getItem("token");
   const response = await fetch(
-    `http://localhost:5000/api/invoices/${invoiceId}/download`,
+    `${apiBase}/api/invoices/${invoiceId}/download`,
     { headers: { Authorization: `Bearer ${token}` } }
   );
   if (!response.ok) throw new Error("PDF download failed");

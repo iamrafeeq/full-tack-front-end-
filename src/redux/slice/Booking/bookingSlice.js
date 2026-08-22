@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import axios from "axios";
+import api from "../../../api/axios";
 
-const BASE = "http://localhost:5000/api/bookings";
+const BASE = "/api/bookings";
 
 // Attach the JWT token to every request that needs auth
 const authHeader = () => ({
@@ -19,7 +19,7 @@ export const createBooking = createAsyncThunk(
   "bookings/createBooking",
   async (bookingData, { rejectWithValue }) => {
     try {
-      const res = await axios.post(`${BASE}/createbooking`, bookingData, authHeader());
+      const res = await api.post(`${BASE}/createbooking`, bookingData, authHeader());
       localStorage.setItem("hasBookings", "true"); // persist so link shows after re-login
       return res.data; // { success, message, booking }
     } catch (err) {
@@ -38,7 +38,7 @@ export const fetchBookings = createAsyncThunk(
   "bookings/fetchBookings",
   async (_, { rejectWithValue }) => {
     try {
-      const res = await axios.get(`${BASE}/getbookings`, authHeader());
+      const res = await api.get(`${BASE}/getbookings`, authHeader());
       return res.data; // { success, total, bookings }
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to fetch bookings.");
@@ -52,7 +52,7 @@ export const fetchBookingById = createAsyncThunk(
   "bookings/fetchBookingById",
   async (id, { rejectWithValue }) => {
     try {
-      const res = await axios.get(`${BASE}/getbooking/${id}`, authHeader());
+      const res = await api.get(`${BASE}/getbooking/${id}`, authHeader());
       return res.data; // { success, booking }
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to fetch booking.");
@@ -67,7 +67,7 @@ export const checkInBooking = createAsyncThunk(
   "bookings/checkInBooking",
   async (id, { rejectWithValue }) => {
     try {
-      const res = await axios.put(`${BASE}/checkin/${id}`, {}, authHeader());
+      const res = await api.put(`${BASE}/checkin/${id}`, {}, authHeader());
       return res.data; // { success, message, booking }
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to check in.");
@@ -82,7 +82,7 @@ export const checkOutBooking = createAsyncThunk(
   "bookings/checkOutBooking",
   async ({ id, extraCharges = [] }, { rejectWithValue }) => {
     try {
-      const res = await axios.put(`${BASE}/checkout/${id}`, { extraCharges }, authHeader());
+      const res = await api.put(`${BASE}/checkout/${id}`, { extraCharges }, authHeader());
       return res.data; // { success, message, booking, invoice }
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to check out.");
@@ -95,7 +95,7 @@ export const cancelBooking = createAsyncThunk(
   "bookings/cancelBooking",
   async (id, { rejectWithValue }) => {
     try {
-      const res = await axios.delete(`${BASE}/cancelbooking/${id}`, authHeader());
+      const res = await api.delete(`${BASE}/cancelbooking/${id}`, authHeader());
       return res.data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to cancel booking.");
@@ -109,7 +109,7 @@ export const payBooking = createAsyncThunk(
   "bookings/payBooking",
   async ({ bookingId, paymentMethod }, { rejectWithValue }) => {
     try {
-      const res = await axios.post(`${BASE}/${bookingId}/pay`, { paymentMethod }, authHeader());
+      const res = await api.post(`${BASE}/${bookingId}/pay`, { paymentMethod }, authHeader());
       return res.data; // { success, message, booking, payment }
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to process payment.");

@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import axios from "axios";
+import api from "../../../api/axios";
 
-const BASE = "http://localhost:5000/api/payments";
+const BASE = "/api/payments";
 
 const authHeader = () => ({
   headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
@@ -12,7 +12,7 @@ export const createPaymentIntent = createAsyncThunk(
   "payments/createIntent",
   async ({ bookingId }, { rejectWithValue }) => {
     try {
-      const res = await axios.post(`${BASE}/create-payment-intent`, { bookingId }, authHeader());
+      const res = await api.post(`${BASE}/create-payment-intent`, { bookingId }, authHeader());
       return res.data; // { clientSecret }
     } catch (err) {
       return rejectWithValue(
@@ -27,7 +27,7 @@ export const confirmStripePayment = createAsyncThunk(
   "payments/confirm",
   async ({ bookingId, paymentIntentId, paymentMethod }, { rejectWithValue }) => {
     try {
-      const res = await axios.post(
+      const res = await api.post(
         `${BASE}/confirm`,
         { bookingId, paymentIntentId, paymentMethod },
         authHeader()
@@ -51,7 +51,7 @@ export const fetchAllPayments = createAsyncThunk(
       if (startDate) params.set("startDate", startDate);
       if (endDate)   params.set("endDate", endDate);
       const url = params.toString() ? `${BASE}?${params}` : BASE;
-      const res = await axios.get(url, authHeader());
+      const res = await api.get(url, authHeader());
       return Array.isArray(res.data) ? res.data : (res.data.payments || res.data.data || []);
     } catch (err) {
       return rejectWithValue(
@@ -66,7 +66,7 @@ export const fetchPaymentByBooking = createAsyncThunk(
   "payments/fetchByBooking",
   async (bookingId, { rejectWithValue }) => {
     try {
-      const res = await axios.get(`${BASE}/booking/${bookingId}`, authHeader());
+      const res = await api.get(`${BASE}/booking/${bookingId}`, authHeader());
       return res.data;
     } catch (err) {
       if (err.response?.status === 404) return null; // unpaid — not an error

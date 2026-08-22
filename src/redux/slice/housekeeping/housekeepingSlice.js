@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios from "axios";
+import api from "../../../api/axios";
 
-const BASE = "http://localhost:5000/api/housekeeping";
+const BASE = "/api/housekeeping";
 
 const authHeader = () => ({
   headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
@@ -11,7 +11,7 @@ export const fetchCleaningRooms = createAsyncThunk(
   "housekeeping/fetchCleaningRooms",
   async (_, { rejectWithValue }) => {
     try {
-      const res = await axios.get(`${BASE}/cleaning-rooms`, authHeader());
+      const res = await api.get(`${BASE}/cleaning-rooms`, authHeader());
       return res.data.rooms;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to fetch rooms");
@@ -23,7 +23,7 @@ export const markRoomClean = createAsyncThunk(
   "housekeeping/markRoomClean",
   async (roomId, { rejectWithValue }) => {
     try {
-      await axios.patch(`${BASE}/rooms/${roomId}/mark-clean`, {}, authHeader());
+      await api.patch(`${BASE}/rooms/${roomId}/mark-clean`, {}, authHeader());
       return roomId;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to mark room clean");

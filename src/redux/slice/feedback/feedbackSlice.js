@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios from "axios";
+import api from "../../../api/axios";
 
-const BASE = "http://localhost:5000/api/feedback";
+const BASE = "/api/feedback";
 
 const authHeader = () => ({
   headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
@@ -11,7 +11,7 @@ export const fetchBookingFeedback = createAsyncThunk(
   "feedback/fetchBookingFeedback",
   async (bookingId, { rejectWithValue }) => {
     try {
-      const res = await axios.get(`${BASE}/${bookingId}`, authHeader());
+      const res = await api.get(`${BASE}/${bookingId}`, authHeader());
       return { bookingId, feedback: res.data.feedback || res.data };
     } catch (err) {
       if (err.response?.status === 404) return { bookingId, feedback: null };
@@ -24,7 +24,7 @@ export const submitFeedback = createAsyncThunk(
   "feedback/submit",
   async ({ booking, rating, comment }, { rejectWithValue }) => {
     try {
-      const res = await axios.post(BASE, { booking, rating, comment }, authHeader());
+      const res = await api.post(BASE, { booking, rating, comment }, authHeader());
       return res.data.feedback || res.data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to submit feedback");
@@ -41,7 +41,7 @@ export const fetchAllFeedback = createAsyncThunk(
       if (sort)      params.append("sort", sort);
       const qs  = params.toString();
       const url = qs ? `${BASE}?${qs}` : BASE;
-      const res = await axios.get(url, authHeader());
+      const res = await api.get(url, authHeader());
       return res.data.feedbacks || res.data.feedback || res.data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to fetch feedback");
@@ -53,7 +53,7 @@ export const fetchFeedbackStats = createAsyncThunk(
   "feedback/fetchStats",
   async (_, { rejectWithValue }) => {
     try {
-      const res = await axios.get(`${BASE}/stats`, authHeader());
+      const res = await api.get(`${BASE}/stats`, authHeader());
       return res.data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to fetch stats");
