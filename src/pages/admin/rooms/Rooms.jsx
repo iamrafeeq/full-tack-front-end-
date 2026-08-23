@@ -14,6 +14,20 @@ import RoomFormModal from "../../../components/admin/rooms/RoomFormModal";
 import {
   StatCard, TableCard, Th, Badge, Spinner, ErrorBanner, EmptyState, Modal, btn,
 } from "../../../components/admin/AdminUI";
+import { apiBase } from "../../../api/axios";
+
+const TYPE_IMAGES = {
+  single: "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=900&q=80",
+  double: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=900&q=80",
+  deluxe: "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=900&q=80",
+  suite:  "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=900&q=80",
+};
+const toImgUrl = (img) => img.startsWith("http") ? img : `${apiBase}/${img}`;
+
+const AMENITY_ICONS = {
+  AC: "❄️", WiFi: "📶", TV: "📺", Minibar: "🍹",
+  Balcony: "🌿", RoomService: "🛎️", Heater: "🔥",
+};
 
 const STATUS_OPTIONS = ["available", "reserved", "occupied", "cleaning", "maintenance"];
 const TYPE_FILTERS   = ["all", "single", "double", "deluxe", "suite"];
@@ -41,6 +55,7 @@ export default function Rooms() {
   const [statusFilter,    setStatusFilter]    = useState("all");
   const [includeInactive, setIncludeInactive] = useState(false);
   const [modal,           setModal]           = useState(null);
+  const [viewRoom,        setViewRoom]        = useState(null);
   const [confirmDelete,   setConfirmDelete]   = useState(null);
   const [deleteModalError, setDeleteModalError] = useState(null);
 
@@ -264,6 +279,12 @@ export default function Rooms() {
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap items-center gap-1.5">
                           <button
+                            onClick={() => setViewRoom(room)}
+                            className="px-3 py-1.5 rounded-lg text-xs font-medium text-[#0B1F2A] border border-[#0B1F2A]/30 hover:bg-[#0B1F2A]/10 transition-colors"
+                          >
+                            View
+                          </button>
+                          <button
                             onClick={() => setModal(room)}
                             className={btn.ghostGold}
                           >
@@ -304,6 +325,99 @@ export default function Rooms() {
           </table>
         </TableCard>
       )}
+
+      {/* Room view modal */}
+      {viewRoom && (() => {
+        const r = viewRoom;
+        const imgs = r.images?.length > 0
+          ? r.images.map(toImgUrl)
+          : [TYPE_IMAGES[r.type] || TYPE_IMAGES.single];
+        return (
+          <Modal
+            title={`Room ${r.roomNumber} — ${r.type?.charAt(0).toUpperCase() + r.type?.slice(1)}`}
+            onClose={() => setViewRoom(null)}
+            size="max-w-2xl"
+            footer={
+              <button onClick={() => setViewRoom(null)} className={btn.secondary}>Close</button>
+            }
+          >
+            {/* Image gallery */}
+            <div className={`grid gap-2 ${imgs.length > 1 ? "grid-cols-3" : "grid-cols-1"}`}>
+              {imgs.map((src, i) => (
+                <img
+                  key={i}
+                  src={src}
+                  alt={`Room ${r.roomNumber} photo ${i + 1}`}
+                  className={`w-full object-cover rounded-lg ${imgs.length > 1 ? "h-28" : "h-52"}`}
+                />
+              ))}
+            </div>
+
+            {/* Details grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-2">
+              {[
+                { label: "Room No.",  value: r.roomNumber },
+                { label: "Type",      value: r.type,    capitalize: true },
+                { label: "Floor",     value: `Floor ${r.floor}` },
+                { label: "Capacity",  value: `${r.capacity} guests` },
+                { label: "Bed Type",  value: r.bedType, capitalize: true },
+                { label: "Status",    value: <Badge value={r.status} /> },
+              ].map(({ label, value, capitalize }) => (
+                <div key={label} className="bg-gray-50 rounded-lg p-3">
+                  <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">{label}</p>
+                  <p className={`text-sm font-medium text-[#0B1F2A] ${capitalize ? "capitalize" : ""}`}>
+                    {value}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            {/* Price */}
+            <div className="flex items-baseline gap-3">
+              <span className="text-2xl font-serif text-[#C9A24B]">
+                ${r.discountPrice || r.price}
+                <span className="text-sm text-gray-400 font-normal">/night</span>
+              </span>
+              {r.discountPrice && (
+                <span className="text-sm text-gray-400 line-through">${r.price}</span>
+              )}
+            </div>
+
+            {/* Description */}
+            {r.description && (
+              <div>
+                <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Description</p>
+                <p className="text-sm text-gray-600 leading-relaxed">{r.description}</p>
+              </div>
+            )}
+
+            {/* Amenities */}
+            {r.amenities?.length > 0 && (
+              <div>
+                <p className="text-xs text-gray-400 uppercase tracking-wide mb-2">Amenities</p>
+                <div className="flex flex-wrap gap-2">
+                  {r.amenities.map((a) => (
+                    <span key={a} className="inline-flex items-center gap-1.5 text-xs bg-gray-100 text-gray-700 px-3 py-1.5 rounded-full">
+                      {AMENITY_ICONS[a] || "✔️"} {a}
+                    </span>
+                  ))}
+                  {r.smokingAllowed && (
+                    <span className="inline-flex items-center gap-1.5 text-xs bg-gray-100 text-gray-700 px-3 py-1.5 rounded-full">
+                      🚬 Smoking Allowed
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Active status */}
+            <div className="flex items-center gap-2 text-sm">
+              <span className={`w-2 h-2 rounded-full ${r.isActive === false ? "bg-gray-400" : "bg-green-500"}`} />
+              <span className="text-gray-500">{r.isActive === false ? "Inactive — not bookable" : "Active"}</span>
+            </div>
+          </Modal>
+        );
+      })()}
 
       {/* Room create / edit modal */}
       {modal && (

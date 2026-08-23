@@ -1,8 +1,11 @@
 import React, { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import AvailabilityWidget from "../../components/public/AvailabilityWidget";
+import { useAuth } from "../../context/AuthContext";
 
 const Home = () => {
+  const { role } = useAuth();
+  const isAdmin = role === "admin" || role === "manager";
   const [activeFacility, setActiveFacility] = useState("Restaurant");
 
   const navLinks = [
@@ -171,6 +174,14 @@ const Home = () => {
             >
               Explore Rooms
             </Link>
+            {isAdmin && (
+              <Link
+                to="/admin/dashboard"
+                className="px-8 py-3.5 border border-[#C9A24B] text-[#C9A24B] font-semibold rounded-full tracking-wide transition-all duration-300 hover:bg-[#C9A24B] hover:text-[#0B1F2A] hover:scale-105 text-center"
+              >
+                Admin Panel
+              </Link>
+            )}
           </div>
         </div>
       </section>

@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { fetchTodayActivity } from "../../redux/slice/receptionist/receptionistSlice";
 import { fetchPublicRooms } from "../../redux/slice/roomSlice/roomSlice";
+import { fetchTableReservations } from "../../redux/slice/tableReservations/tableReservationSlice";
 import ReceptionistLayout from "../../components/receptionist/ReceptionistLayout";
 
 function StatCard({ icon, label, value, sub, accent = "#0B1F2A", to }) {
@@ -34,16 +35,21 @@ const QUICK_ACTIONS = [
   { icon: "🛏️", label: "Room Status",          desc: "View all room availability",      to: "/receptionist/room-status" },
   { icon: "🔧", label: "Report Issue",         desc: "Flag a room for maintenance",     to: "/receptionist/report-issue" },
   { icon: "📋", label: "Maintenance",          desc: "View maintenance requests",       to: "/receptionist/maintenance" },
+  { icon: "🍽️", label: "Table Reservations",  desc: "Seat and manage table bookings",  to: "/receptionist/table-reservations" },
 ];
 
 export default function ReceptionDashboard() {
   const dispatch = useDispatch();
   const { arrivals = [], departures = [], todayLoading } = useSelector((s) => s.receptionist);
   const { rooms, loading: roomsLoading } = useSelector((s) => s.rooms);
+  const { reservations: tableReservations, loading: tableResLoading } = useSelector((s) => s.tableReservations);
+
+  const todayStr = new Date().toISOString().split("T")[0];
 
   useEffect(() => {
     dispatch(fetchTodayActivity());
     dispatch(fetchPublicRooms());
+    dispatch(fetchTableReservations({ date: todayStr }));
   }, [dispatch]);
 
   const availableRooms = rooms.filter((r) => r.status === "available").length;
@@ -58,7 +64,7 @@ export default function ReceptionDashboard() {
         <p className="text-sm text-gray-500 mb-7">Here is your front desk overview for today.</p>
 
         {/* Stat cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 mb-10">
           <StatCard
             icon="🛬"
             label="Arrivals Today"
@@ -90,6 +96,14 @@ export default function ReceptionDashboard() {
             sub="Need collection"
             accent="#dc2626"
             to="/receptionist/arrivals"
+          />
+          <StatCard
+            icon="🍽️"
+            label="Table Reservations Today"
+            value={tableResLoading ? "…" : tableReservations.filter((r) => r.status === "reserved").length}
+            sub="Awaiting seating"
+            accent="#7c3aed"
+            to="/receptionist/table-reservations"
           />
         </div>
 

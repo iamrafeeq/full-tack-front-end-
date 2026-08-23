@@ -34,6 +34,17 @@ import AdminSettings      from "../pages/admin/settings/Settings"
 import AdminMessages      from "../pages/admin/messages/Messages"
 import ReceptionMessages  from "../pages/receptionist/ReceptionMessages"
 import AdminPayments      from "../pages/admin/payments/Payments"
+import AdminTables              from "../pages/admin/tables/Tables"
+import AdminTableReservations   from "../pages/admin/tableReservations/TableReservations"
+import TableReservation         from "../pages/public/TableReservation"
+import MyTableReservations      from "../pages/user/MyTableReservations"
+import ReceptionistTableReservations from "../pages/receptionist/ReceptionistTableReservations"
+import TablesCleaning                    from "../pages/housekeeping/TablesCleaning"
+import AdminEventHalls                   from "../pages/admin/eventHalls/EventHalls"
+import AdminEventHallBookings            from "../pages/admin/eventHallBookings/EventHallBookings"
+import EventHallBooking                  from "../pages/public/EventHallBooking"
+import MyEventHallBookings               from "../pages/user/MyEventHallBookings"
+import ReceptionistEventHallBookings     from "../pages/receptionist/ReceptionistEventHallBookings"
 
 const STAFF = [ROLES.ADMIN, ROLES.MANAGER];
 
@@ -52,6 +63,10 @@ function AppRoutes() {
       <Route path="/rooms/:id" element={<RoomDetails />} />
       <Route path="/signeuser" element={<SignelUser/>}/>
       <Route path="/my-bookings" element={<ProtectedRoute><MyBookings /></ProtectedRoute>} />
+      <Route path="/reserve-table" element={<TableReservation />} />
+      <Route path="/my-table-reservations" element={<ProtectedRoute><MyTableReservations /></ProtectedRoute>} />
+      <Route path="/book-event-hall" element={<ProtectedRoute><EventHallBooking /></ProtectedRoute>} />
+      <Route path="/my-event-hall-bookings" element={<ProtectedRoute><MyEventHallBookings /></ProtectedRoute>} />
 
       {/* Shared admin + manager routes */}
       <Route
@@ -122,6 +137,42 @@ function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={STAFF}>
             <AdminPayments />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/tables"
+        element={
+          <ProtectedRoute allowedRoles={STAFF}>
+            <AdminTables />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/table-reservations"
+        element={
+          <ProtectedRoute allowedRoles={STAFF}>
+            <AdminTableReservations />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/event-halls"
+        element={
+          <ProtectedRoute allowedRoles={STAFF}>
+            <AdminEventHalls />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/event-hall-bookings"
+        element={
+          <ProtectedRoute allowedRoles={STAFF}>
+            <AdminEventHallBookings />
           </ProtectedRoute>
         }
       />
@@ -219,6 +270,22 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/receptionist/table-reservations"
+        element={
+          <ProtectedRoute allowedRoles={[ROLES.RECEPTIONIST]}>
+            <ReceptionistTableReservations />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/receptionist/event-hall-bookings"
+        element={
+          <ProtectedRoute allowedRoles={[ROLES.RECEPTIONIST]}>
+            <ReceptionistEventHallBookings />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Housekeeping */}
       <Route
@@ -250,6 +317,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={[ROLES.HOUSEKEEPING]}>
             <ReportIssue />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/housekeeping/tables-to-clean"
+        element={
+          <ProtectedRoute allowedRoles={[ROLES.HOUSEKEEPING]}>
+            <TablesCleaning />
           </ProtectedRoute>
         }
       />

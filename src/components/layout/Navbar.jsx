@@ -50,12 +50,14 @@ function Navbar() {
   }, []);
 
   const navLinks = [
-    { name: "Home",       to: "/" },
-    { name: "About",      to: "/about" },
-    { name: "Rooms",      to: "/rooms" },
-    { name: "Facilities", to: "/facilities" },
-    { name: "Gallery",    to: "/gallery" },
-    { name: "Contact",    to: "/contact" },
+    { name: "Home",            to: "/" },
+    { name: "About",           to: "/about" },
+    { name: "Rooms",           to: "/rooms" },
+    { name: "Facilities",      to: "/facilities" },
+    { name: "Gallery",         to: "/gallery" },
+    { name: "Contact",         to: "/contact" },
+    { name: "Reserve a Table", to: "/reserve-table" },
+    { name: "Book Event Hall", to: "/book-event-hall" },
   ];
 
   const isAdminRoute = ["/admin", "/manager", "/receptionist", "/housekeeping"].some(
@@ -160,6 +162,24 @@ function Navbar() {
                         My Bookings
                       </NavLink>
                     )}
+                    {role === "user" && (
+                      <NavLink
+                        to="/my-table-reservations"
+                        onClick={() => setProfileOpen(false)}
+                        className={dropdownLinkClass}
+                      >
+                        My Table Reservations
+                      </NavLink>
+                    )}
+                    {role === "user" && (
+                      <NavLink
+                        to="/my-event-hall-bookings"
+                        onClick={() => setProfileOpen(false)}
+                        className={dropdownLinkClass}
+                      >
+                        My Event Hall Bookings
+                      </NavLink>
+                    )}
 
                     {/* Role-specific panel links */}
                     {roleLinks.length > 0 && (
@@ -255,9 +275,6 @@ function Navbar() {
             </>
           ) : (
             <>
-              <span className={`text-sm font-medium ${scrolled ? "text-[#13293D]" : "text-white"}`}>
-                {user?.name}
-              </span>
               {isStaff && (
                 <NavLink
                   to={panelHome}
@@ -268,12 +285,6 @@ function Navbar() {
                   Dashboard
                 </NavLink>
               )}
-              <button
-                onClick={logout}
-                className="px-4 py-2 rounded-full bg-red-600 text-white text-sm font-semibold transition-all duration-300 hover:bg-red-700"
-              >
-                Logout
-              </button>
             </>
           )}
         </div>
@@ -364,7 +375,8 @@ function Navbar() {
                 </>
               ) : (
                 <>
-                  <span className="text-[#13293D] font-medium text-sm">{user?.name}</span>
+                  <div className="border-t border-gray-100 my-1" />
+                  <span className="text-xs text-gray-400 font-medium uppercase tracking-wide">{user?.name}</span>
                   <NavLink
                     to="/signeuser"
                     className="text-[#13293D] font-medium text-sm"
@@ -381,20 +393,36 @@ function Navbar() {
                       My Bookings
                     </NavLink>
                   )}
-                  {/* Role-specific panel links */}
-                  {roleLinks.map((link) => (
+                  {role === "user" && (
                     <NavLink
-                      key={link.to}
-                      to={link.to}
+                      to="/my-table-reservations"
                       className="text-[#13293D] font-medium text-sm"
                       onClick={() => setMenuOpen(false)}
                     >
-                      {link.label}
+                      My Table Reservations
                     </NavLink>
-                  ))}
+                  )}
+                  {role === "user" && (
+                    <NavLink
+                      to="/my-event-hall-bookings"
+                      className="text-[#13293D] font-medium text-sm"
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      My Event Hall Bookings
+                    </NavLink>
+                  )}
+                  {isStaff && (
+                    <NavLink
+                      to={panelHome}
+                      className="text-[#13293D] font-medium text-sm"
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      {role === "admin" ? "Admin Panel" : role === "manager" ? "Manager Panel" : "My Panel"}
+                    </NavLink>
+                  )}
                   <button
                     onClick={() => { setMenuOpen(false); logout(); }}
-                    className="text-[#13293D] font-medium text-sm text-left"
+                    className="text-red-500 font-medium text-sm text-left"
                   >
                     Logout
                   </button>

@@ -1,16 +1,22 @@
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import NotificationBell from "../notifications/NotificationBell";
+import {
+  HiHome, HiWrench, HiEnvelope, HiClipboardDocumentList, HiPencilSquare,
+} from "react-icons/hi2";
+import { MdBed, MdRestaurant, MdFlightLand, MdFlightTakeoff, MdCelebration } from "react-icons/md";
 
 const NAV_LINKS = [
-  { label: "Dashboard",      to: "/receptionist/dashboard",    icon: "🏠" },
-  { label: "Today's Arrivals",   to: "/receptionist/arrivals",     icon: "🛬" },
-  { label: "Today's Departures", to: "/receptionist/departures",   icon: "🛫" },
-  { label: "New Booking",    to: "/receptionist/new-booking",  icon: "📝" },
-  { label: "Room Status",    to: "/receptionist/room-status",  icon: "🛏️" },
-  { label: "Report Issue",   to: "/receptionist/report-issue", icon: "🔧" },
-  { label: "Maintenance",    to: "/receptionist/maintenance",  icon: "📋" },
-  { label: "Messages",       to: "/receptionist/messages",     icon: "✉️" },
+  { label: "Dashboard",             to: "/receptionist/dashboard",             icon: HiHome },
+  { label: "Today's Arrivals",      to: "/receptionist/arrivals",              icon: MdFlightLand },
+  { label: "Today's Departures",    to: "/receptionist/departures",            icon: MdFlightTakeoff },
+  { label: "New Booking",           to: "/receptionist/new-booking",           icon: HiPencilSquare },
+  { label: "Room Status",           to: "/receptionist/room-status",           icon: MdBed },
+  { label: "Table Reservations",    to: "/receptionist/table-reservations",    icon: MdRestaurant },
+  { label: "Event Hall Bookings",   to: "/receptionist/event-hall-bookings",   icon: MdCelebration },
+  { label: "Report Issue",          to: "/receptionist/report-issue",          icon: HiWrench },
+  { label: "Maintenance",           to: "/receptionist/maintenance",           icon: HiClipboardDocumentList },
+  { label: "Messages",              to: "/receptionist/messages",              icon: HiEnvelope },
 ];
 
 export default function ReceptionistLayout({ children, title }) {
@@ -47,7 +53,7 @@ export default function ReceptionistLayout({ children, title }) {
                 }`
               }
             >
-              <span className="text-base shrink-0">{link.icon}</span>
+              <link.icon className="w-5 h-5 shrink-0" />
               <span>{link.label}</span>
             </NavLink>
           ))}

@@ -1,12 +1,15 @@
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import NotificationBell from "../notifications/NotificationBell";
+import { HiHome, HiWrench, HiClipboardDocumentList } from "react-icons/hi2";
+import { MdCleaningServices, MdChair } from "react-icons/md";
 
 const NAV_LINKS = [
-  { label: "Dashboard",         to: "/housekeeping/dashboard",          icon: "🏠" },
-  { label: "Rooms to Clean",    to: "/housekeeping/rooms-to-clean",     icon: "🧹" },
-  { label: "Maintenance Tasks", to: "/housekeeping/maintenance-tasks",  icon: "🔧" },
-  { label: "Report Issue",      to: "/housekeeping/report-issue",       icon: "📋" },
+  { label: "Dashboard",         to: "/housekeeping/dashboard",         icon: HiHome },
+  { label: "Rooms to Clean",    to: "/housekeeping/rooms-to-clean",    icon: MdCleaningServices },
+  { label: "Tables to Clean",   to: "/housekeeping/tables-to-clean",   icon: MdChair },
+  { label: "Maintenance Tasks", to: "/housekeeping/maintenance-tasks", icon: HiWrench },
+  { label: "Report Issue",      to: "/housekeeping/report-issue",      icon: HiClipboardDocumentList },
 ];
 
 export default function HousekeepingLayout({ children, title }) {
@@ -43,7 +46,7 @@ export default function HousekeepingLayout({ children, title }) {
                 }`
               }
             >
-              <span className="text-base shrink-0">{link.icon}</span>
+              <link.icon className="w-5 h-5 shrink-0" />
               <span>{link.label}</span>
             </NavLink>
           ))}

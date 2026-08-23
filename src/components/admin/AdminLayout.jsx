@@ -2,22 +2,32 @@ import { useEffect, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import NotificationBell from "../notifications/NotificationBell";
+import {
+  HiHome, HiWrench, HiStar, HiEnvelope, HiCreditCard,
+  HiUsers, HiDocumentText, HiCog6Tooth, HiClipboardDocumentList,
+  HiChartBarSquare, HiCalendarDays,
+} from "react-icons/hi2";
+import { MdBed, MdChair, MdRestaurant, MdCelebration } from "react-icons/md";
 
 const SHARED_LINKS = [
-  { label: "Dashboard",   to: "/admin/dashboard",   icon: "🏠" },
-  { label: "Rooms",       to: "/admin/rooms",       icon: "🛏️" },
-  { label: "Bookings",    to: "/admin/bookings",    icon: "📋" },
-  { label: "Maintenance", to: "/admin/maintenance", icon: "🔧" },
-  { label: "Reports",     to: "/admin/reports",     icon: "📊" },
-  { label: "Feedback",    to: "/admin/feedback",    icon: "⭐" },
-  { label: "Messages",    to: "/admin/messages",    icon: "✉️" },
-  { label: "Payments",    to: "/admin/payments",    icon: "💳" },
+  { label: "Dashboard",            to: "/admin/dashboard",            icon: HiHome },
+  { label: "Rooms",                to: "/admin/rooms",                icon: MdBed },
+  { label: "Bookings",             to: "/admin/bookings",             icon: HiClipboardDocumentList },
+  { label: "Tables",               to: "/admin/tables",               icon: MdChair },
+  { label: "Table Reservations",   to: "/admin/table-reservations",   icon: MdRestaurant },
+  { label: "Event Halls",          to: "/admin/event-halls",          icon: MdCelebration },
+  { label: "Event Hall Bookings",  to: "/admin/event-hall-bookings",  icon: HiCalendarDays },
+  { label: "Maintenance",          to: "/admin/maintenance",          icon: HiWrench },
+  { label: "Reports",              to: "/admin/reports",              icon: HiChartBarSquare },
+  { label: "Feedback",             to: "/admin/feedback",             icon: HiStar },
+  { label: "Messages",             to: "/admin/messages",             icon: HiEnvelope },
+  { label: "Payments",             to: "/admin/payments",             icon: HiCreditCard },
 ];
 
 const ADMIN_ONLY_LINKS = [
-  { label: "Guests",   to: "/admin/users",    icon: "👥" },
-  { label: "Invoices", to: "/admin/invoices", icon: "🧾" },
-  { label: "Settings", to: "/admin/settings", icon: "⚙️" },
+  { label: "Guests",   to: "/admin/users",    icon: HiUsers },
+  { label: "Invoices", to: "/admin/invoices", icon: HiDocumentText },
+  { label: "Settings", to: "/admin/settings", icon: HiCog6Tooth },
 ];
 
 const RAIL_KEY = "ls-admin-rail";
@@ -97,7 +107,7 @@ export default function AdminLayout({ children, title }) {
                   }`
                 }
               >
-                <span className="text-base leading-none shrink-0">{link.icon}</span>
+                <link.icon className="w-5 h-5 shrink-0" />
                 <span
                   className={`whitespace-nowrap overflow-hidden transition-opacity duration-200 ${
                     collapsed ? "w-0 opacity-0" : "opacity-100"

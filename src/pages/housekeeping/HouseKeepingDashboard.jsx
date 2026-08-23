@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import HousekeepingLayout from "../../components/housekeeping/HousekeepingLayout";
-import { fetchCleaningRooms } from "../../redux/slice/housekeeping/housekeepingSlice";
+import { fetchCleaningRooms, fetchCleaningTables } from "../../redux/slice/housekeeping/housekeepingSlice";
 import { fetchMyTasks } from "../../redux/slice/maintenance/maintenanceSlice";
 
 function OverviewCard({ icon, label, value, sub, to, accent = "#0B1F2A" }) {
@@ -29,11 +29,12 @@ function OverviewCard({ icon, label, value, sub, to, accent = "#0B1F2A" }) {
 
 export default function HouseKeepingDashboard() {
   const dispatch = useDispatch();
-  const { cleaningRooms, loading: cleanLoading } = useSelector((s) => s.housekeeping);
+  const { cleaningRooms, loading: cleanLoading, cleaningTables, tablesLoading } = useSelector((s) => s.housekeeping);
   const { myTasks = [], myTasksLoading } = useSelector((s) => s.maintenance);
 
   useEffect(() => {
     dispatch(fetchCleaningRooms());
+    dispatch(fetchCleaningTables());
     dispatch(fetchMyTasks(""));
   }, [dispatch]);
 
@@ -48,7 +49,7 @@ export default function HouseKeepingDashboard() {
         <p className="text-sm text-gray-500 mb-7">Here is your shift overview for today.</p>
 
         {/* Stat overview cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 mb-10">
           <OverviewCard
             icon="🧹"
             label="Rooms to Clean"
@@ -56,6 +57,14 @@ export default function HouseKeepingDashboard() {
             sub="Need attention"
             accent="#C9A24B"
             to="/housekeeping/rooms-to-clean"
+          />
+          <OverviewCard
+            icon="🪑"
+            label="Tables to Clean"
+            value={tablesLoading ? "…" : cleaningTables.length}
+            sub="Need attention"
+            accent="#7c3aed"
+            to="/housekeeping/tables-to-clean"
           />
           <OverviewCard
             icon="🚨"
@@ -93,6 +102,15 @@ export default function HouseKeepingDashboard() {
             <div className="text-3xl mb-3">🧹</div>
             <p className="font-serif text-[#0B1F2A] text-base mb-1">Rooms to Clean</p>
             <p className="text-xs text-gray-400">View and mark rooms clean</p>
+          </Link>
+
+          <Link
+            to="/housekeeping/tables-to-clean"
+            className="group bg-white rounded-xl border border-gray-100 shadow-sm p-6 hover:border-[#C9A24B]/50 hover:shadow-md transition-all"
+          >
+            <div className="text-3xl mb-3">🪑</div>
+            <p className="font-serif text-[#0B1F2A] text-base mb-1">Tables to Clean</p>
+            <p className="text-xs text-gray-400">View and mark tables clean</p>
           </Link>
 
           <Link
