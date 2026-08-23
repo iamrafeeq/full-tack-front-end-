@@ -14,6 +14,7 @@ import settingsReducer      from './slice/settings/settingsSlice';
 import notificationsReducer from './slice/notifications/notificationsSlice';
 import contactReducer       from './slice/contactUs/contactusSlice';
 import paymentsReducer      from './slice/payments/paymentsSlice';
+import deleteBookingReducer from './slice/Booking/completeBooking/deleteBookingSlice';
 
 export const store = configureStore({
   reducer: {
@@ -32,5 +33,6 @@ export const store = configureStore({
     notifications: notificationsReducer,  // per-user notification bell + list
     contact:       contactReducer,        // public contact form + admin message list
     payments:      paymentsReducer,       // Stripe payment intent + confirm
+    deleteBooking: deleteBookingReducer,  // hard-delete a completed booking
   },
 });

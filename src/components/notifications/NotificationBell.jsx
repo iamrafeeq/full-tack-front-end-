@@ -7,6 +7,8 @@ import {
   fetchNotifications,
   markRead,
   markAllRead,
+  clearAllNotifications,
+  deleteNotification,
 } from "../../redux/slice/notifications/notificationsSlice";
 
 function timeAgo(iso) {
@@ -106,14 +108,24 @@ export default function NotificationBell() {
                 </span>
               )}
             </h4>
-            {unreadCount > 0 && (
-              <button
-                onClick={() => dispatch(markAllRead())}
-                className="text-xs text-[#C9A24B] hover:underline"
-              >
-                Mark all read
-              </button>
-            )}
+            <div className="flex items-center gap-3">
+              {unreadCount > 0 && (
+                <button
+                  onClick={() => dispatch(markAllRead())}
+                  className="text-xs text-[#C9A24B] hover:underline"
+                >
+                  Mark all read
+                </button>
+              )}
+              {list.length > 0 && (
+                <button
+                  onClick={() => dispatch(clearAllNotifications())}
+                  className="text-xs text-red-400 hover:underline"
+                >
+                  Clear all
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Body */}
@@ -126,18 +138,29 @@ export default function NotificationBell() {
               <p className="text-center text-sm text-gray-400 py-8">No notifications yet</p>
             ) : (
               list.slice(0, 10).map((n) => (
-                <button
+                <div
                   key={n._id}
-                  onClick={() => handleItemClick(n)}
-                  className={`w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors ${
-                    !n.isRead ? "bg-amber-50/70" : ""
+                  className={`flex items-start gap-2 px-4 py-3 transition-colors ${
+                    !n.isRead ? "bg-amber-50/70" : "hover:bg-gray-50"
                   }`}
                 >
-                  <p className={`text-sm leading-snug ${!n.isRead ? "font-medium text-[#0B1F2A]" : "text-gray-600"}`}>
-                    {n.message}
-                  </p>
-                  <p className="text-[11px] text-gray-400 mt-0.5">{timeAgo(n.createdAt)}</p>
-                </button>
+                  <button
+                    onClick={() => handleItemClick(n)}
+                    className="flex-1 text-left min-w-0"
+                  >
+                    <p className={`text-sm leading-snug ${!n.isRead ? "font-medium text-[#0B1F2A]" : "text-gray-600"}`}>
+                      {n.message}
+                    </p>
+                    <p className="text-[11px] text-gray-400 mt-0.5">{timeAgo(n.createdAt)}</p>
+                  </button>
+                  <button
+                    onClick={() => dispatch(deleteNotification(n._id))}
+                    aria-label="Dismiss notification"
+                    className="flex-shrink-0 mt-0.5 text-gray-300 hover:text-gray-500 text-xs leading-none p-0.5 transition-colors"
+                  >
+                    ✕
+                  </button>
+                </div>
               ))
             )}
           </div>

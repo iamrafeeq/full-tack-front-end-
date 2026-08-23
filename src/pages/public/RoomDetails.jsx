@@ -64,13 +64,15 @@ function RoomDetails() {
   }
 
   // Use first uploaded image if available, otherwise fall back to type placeholder
+  const toUrl = (img) => img.startsWith("http") ? img : `${apiBase}/${img}`;
+
   const image = room.images?.[0]
-    ? `${apiBase}/${room.images[0]}`
+    ? toUrl(room.images[0])
     : (TYPE_IMAGES[room.type] || DEFAULT_IMAGE);
 
   // Gallery — use all uploaded images, or repeat the main image as placeholder
   const gallery = room.images?.length > 0
-    ? room.images.map((img) => `${apiBase}/${img}`)
+    ? room.images.map(toUrl)
     : [image, image, image];
   const price       = room.discountPrice || room.price;
   const isAvail     = room.status !== "maintenance";

@@ -229,7 +229,7 @@ export default function AvailabilityWidget() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {results.slice(0, 3).map((room) => {
                     const img = room.images?.[0]
-                      ? `${apiBase}/${room.images[0]}`
+                      ? (room.images[0].startsWith("http") ? room.images[0] : `${apiBase}/${room.images[0]}`)
                       : TYPE_IMAGES[room.type] || DEFAULT_IMAGE;
                     const price    = room.discountPrice || room.price;
                     const on       = selected === room._id;

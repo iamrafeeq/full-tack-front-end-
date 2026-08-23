@@ -40,6 +40,24 @@ export const markAllRead = createAsyncThunk("notifications/markAllRead", async (
   }
 });
 
+export const clearAllNotifications = createAsyncThunk("notifications/clearAll", async (_, { rejectWithValue }) => {
+  try {
+    await api.delete(BASE, authHeader());
+    return true;
+  } catch (err) {
+    return rejectWithValue(err.response?.data?.message || "Failed to clear notifications");
+  }
+});
+
+export const deleteNotification = createAsyncThunk("notifications/deleteOne", async (id, { rejectWithValue }) => {
+  try {
+    await api.delete(`${BASE}/${id}`, authHeader());
+    return id;
+  } catch (err) {
+    return rejectWithValue(err.response?.data?.message || "Failed to delete notification");
+  }
+});
+
 const notificationsSlice = createSlice({
   name: "notifications",
   initialState: {
@@ -78,6 +96,18 @@ const notificationsSlice = createSlice({
       .addCase(markAllRead.fulfilled, (state) => {
         state.list.forEach((n) => { n.isRead = true; });
         state.unreadCount = 0;
+      })
+
+      .addCase(clearAllNotifications.fulfilled, (state) => {
+        state.list = [];
+        state.unreadCount = 0;
+      })
+
+      .addCase(deleteNotification.fulfilled, (state, action) => {
+        const id = action.payload;
+        const n = state.list.find((x) => x._id === id);
+        if (n && !n.isRead) state.unreadCount = Math.max(0, state.unreadCount - 1);
+        state.list = state.list.filter((x) => x._id !== id);
       });
   },
 });

@@ -7,6 +7,7 @@ import {
   updateMaintenanceStatus,
   fetchHousekeepingStaff,
   assignMaintenance,
+  deleteMaintenance,
   clearReportState,
 } from "../../redux/slice/maintenance/maintenanceSlice";
 import { fetchPublicRooms } from "../../redux/slice/roomSlice/roomSlice";
@@ -32,13 +33,15 @@ export default function Maintenance() {
     updateLoading, updateError,
     staffList, staffLoading,
     assignLoading, assignError,
+    deleteLoading, deleteError,
   } = useSelector((s) => s.maintenance);
   const { rooms } = useSelector((s) => s.rooms);
 
   const [statusTab, setStatusTab] = useState("");
   const [form, setForm] = useState({ room: "", issue: "" });
-  const [assignTarget, setAssignTarget] = useState(null);
-  const [assignee, setAssignee] = useState("");
+  const [assignTarget,    setAssignTarget]    = useState(null);
+  const [assignee,        setAssignee]        = useState("");
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
 
   useEffect(() => {
     dispatch(fetchPublicRooms());
@@ -134,7 +137,7 @@ export default function Maintenance() {
             </span>
           </div>
 
-          <ErrorBanner>{updateError || assignError}</ErrorBanner>
+          <ErrorBanner>{updateError || assignError || deleteError}</ErrorBanner>
 
           {loading && <Spinner />}
           {!loading && error && (
@@ -187,13 +190,41 @@ export default function Maintenance() {
                         </td>
                         <td className="px-4 py-3.5 text-xs text-gray-400 whitespace-nowrap">{fmtDate(r.createdAt)}</td>
                         <td className="px-4 py-3.5">
-                          <button
-                            onClick={() => { setAssignTarget(r); setAssignee(r.assignedTo?._id || ""); }}
-                            disabled={assignLoading === r._id}
-                            className={btn.ghostGold}
-                          >
-                            {r.assignedTo ? "Reassign" : "Assign"}
-                          </button>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <button
+                              onClick={() => { setAssignTarget(r); setAssignee(r.assignedTo?._id || ""); }}
+                              disabled={assignLoading === r._id}
+                              className={btn.ghostGold}
+                            >
+                              {r.assignedTo ? "Reassign" : "Assign"}
+                            </button>
+                            {r.status === "resolved" && (
+                              deleteConfirmId === r._id ? (
+                                <span className="flex items-center gap-1">
+                                  <button
+                                    onClick={() => dispatch(deleteMaintenance(r._id)).then((res) => { if (!res.error) setDeleteConfirmId(null); })}
+                                    disabled={deleteLoading === r._id}
+                                    className="text-xs px-2.5 py-1 rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-60 transition-colors"
+                                  >
+                                    {deleteLoading === r._id ? "…" : "Yes"}
+                                  </button>
+                                  <button
+                                    onClick={() => setDeleteConfirmId(null)}
+                                    className="text-xs px-2.5 py-1 rounded border border-gray-300 text-gray-500 hover:bg-gray-50 transition-colors"
+                                  >
+                                    No
+                                  </button>
+                                </span>
+                              ) : (
+                                <button
+                                  onClick={() => setDeleteConfirmId(r._id)}
+                                  className="text-xs px-2.5 py-1 rounded border border-red-200 text-red-500 hover:bg-red-50 transition-colors"
+                                >
+                                  Delete
+                                </button>
+                              )
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))

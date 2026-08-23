@@ -261,7 +261,7 @@ export default function RoomFormModal({ editRoom, onClose, onSuccess }) {
                   {editRoom.images.map((img, i) => (
                     <img
                       key={i}
-                      src={`${apiBase}/${img}`}
+                      src={img.startsWith("http") ? img : `${apiBase}/${img}`}
                       alt={`Current room image ${i + 1}`}
                       className="h-20 w-20 rounded-lg object-cover border border-gray-200"
                     />

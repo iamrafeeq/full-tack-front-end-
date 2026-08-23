@@ -70,6 +70,18 @@ export const assignMaintenance = createAsyncThunk(
   }
 );
 
+export const deleteMaintenance = createAsyncThunk(
+  "maintenance/delete",
+  async (id, { rejectWithValue }) => {
+    try {
+      await api.delete(`${BASE}/maintenance/${id}`, authHeader());
+      return id;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || "Failed to delete request.");
+    }
+  }
+);
+
 export const fetchMyTasks = createAsyncThunk(
   "maintenance/fetchMyTasks",
   async (status = "", { rejectWithValue }) => {
@@ -101,6 +113,8 @@ const maintenanceSlice = createSlice({
     staffError:     null,
     assignLoading:  null, // holds id of request currently being assigned
     assignError:    null,
+    deleteLoading:  null, // holds id of request currently being deleted
+    deleteError:    null,
     myTasks:        [],
     myTasksLoading: false,
     myTasksError:   null,
@@ -184,6 +198,19 @@ const maintenanceSlice = createSlice({
       .addCase(assignMaintenance.rejected, (state, action) => {
         state.assignLoading = null;
         state.assignError   = action.payload;
+      })
+      // deleteMaintenance — remove from list on success
+      .addCase(deleteMaintenance.pending, (state, action) => {
+        state.deleteLoading = action.meta.arg;
+        state.deleteError   = null;
+      })
+      .addCase(deleteMaintenance.fulfilled, (state, action) => {
+        state.deleteLoading = null;
+        state.requests      = state.requests.filter((r) => r._id !== action.payload);
+      })
+      .addCase(deleteMaintenance.rejected, (state, action) => {
+        state.deleteLoading = null;
+        state.deleteError   = action.payload;
       })
       // fetchMyTasks
       .addCase(fetchMyTasks.pending, (state) => {

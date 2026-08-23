@@ -152,7 +152,7 @@ function Rooms() {
               {filtered.map((room) => {
                 // Use first uploaded image if available, otherwise fall back to type placeholder
                 const image    = room.images?.[0]
-                  ? `${apiBase}/${room.images[0]}`
+                  ? (room.images[0].startsWith("http") ? room.images[0] : `${apiBase}/${room.images[0]}`)
                   : (TYPE_IMAGES[room.type] || DEFAULT_IMAGE);
                 const price       = room.discountPrice || room.price;
                 const isAvail     = room.status !== "maintenance"; // maintenance = truly off-limits

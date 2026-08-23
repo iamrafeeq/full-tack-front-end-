@@ -12,6 +12,7 @@ import {
 import AdminLayout from "../../../components/admin/AdminLayout";
 import { fmt, fmtMethod, downloadInvoicePdf } from "../../../components/admin/invoices/invoiceHelpers";
 import { fetchPaymentByBooking, clearBookingPayment } from "../../../redux/slice/payments/paymentsSlice";
+import { deleteBooking, clearDeleteError } from "../../../redux/slice/Booking/completeBooking/deleteBookingSlice";
 
 // Status badge styles
 const STATUS_STYLES = {
@@ -43,6 +44,7 @@ export default function AdminBookings() {
   } = useSelector((state) => state.bookings);
 
   const { bookingPayment, bookingPaymentLoading } = useSelector((state) => state.payments);
+  const { loading: deleteLoading, error: deleteError } = useSelector((state) => state.deleteBooking);
 
   const [search,          setSearch]          = useState("");
   const [statusFilter,    setStatusFilter]    = useState("all");
@@ -57,6 +59,7 @@ export default function AdminBookings() {
   const [coExtras,        setCoExtras]        = useState([{ description: "", amount: "" }]);
   const [invoiceConfirm,  setInvoiceConfirm]  = useState({ open: false, invoice: null, booking: null });
   const [pdfLoading,      setPdfLoading]      = useState(false);
+  const [deleteConfirm,   setDeleteConfirm]   = useState(false);
 
   useEffect(() => {
     dispatch(fetchBookings());
@@ -130,8 +133,19 @@ export default function AdminBookings() {
   };
   const closeDetail = () => {
     setDetailModal(false);
+    setDeleteConfirm(false);
     dispatch(clearSingleBooking());
     dispatch(clearBookingPayment());
+    dispatch(clearDeleteError());
+  };
+
+  const handleDeleteBooking = async () => {
+    if (!singleBooking) return;
+    const result = await dispatch(deleteBooking(singleBooking._id));
+    if (!result.error) {
+      closeDetail();
+      dispatch(fetchBookings());
+    }
   };
 
   const handleCollectPay = () => {
@@ -480,6 +494,44 @@ export default function AdminBookings() {
                 <p className="text-center text-gray-400 py-8">Could not load booking details.</p>
               )}
             </div>
+
+            {/* Delete footer — only for completed bookings */}
+            {singleBooking && (singleBooking.status === "checked-out" || singleBooking.status === "cancelled") && (
+              <div className="px-6 py-4 border-t border-gray-100">
+                {deleteError && (
+                  <p className="text-xs text-red-500 mb-2 text-center">{deleteError}</p>
+                )}
+                {!deleteConfirm ? (
+                  <button
+                    onClick={() => setDeleteConfirm(true)}
+                    className="w-full py-2 rounded-lg border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 transition-colors"
+                  >
+                    Delete Booking
+                  </button>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    <p className="text-xs text-gray-500 text-center">
+                      This will permanently delete the booking record. This action cannot be undone.
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setDeleteConfirm(false)}
+                        className="flex-1 py-2 rounded-lg border border-gray-200 text-gray-600 text-sm hover:bg-gray-50 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleDeleteBooking}
+                        disabled={deleteLoading}
+                        className="flex-1 py-2 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 disabled:opacity-60 transition-colors"
+                      >
+                        {deleteLoading ? "Deleting…" : "Yes, Delete"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
