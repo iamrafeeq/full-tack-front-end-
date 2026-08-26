@@ -167,7 +167,7 @@ export function Modal({ title, children, onClose, footer, size = "max-w-md" }) {
             ✕
           </button>
         </div>
-        <div className="px-6 py-5 space-y-4 overflow-y-auto flex-1">{children}</div>
+        <div className="px-4 py-4 sm:px-6 sm:py-5 space-y-4 overflow-y-auto flex-1">{children}</div>
         {footer && (
           <div className="px-6 py-4 border-t border-gray-100 flex gap-3 justify-end shrink-0">
             {footer}

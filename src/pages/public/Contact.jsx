@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { submitContact, clearSubmitState } from "../../redux/slice/contactUs/contactusSlice";
+import {
+  submitContact,
+  clearSubmitState,
+} from "../../redux/slice/contactUs/contactusSlice";
 
 const businessHours = [
   { day: "Monday - Friday", time: "8:00 AM - 10:00 PM" },
@@ -33,7 +36,9 @@ const faqs = [
 
 function Contact() {
   const dispatch = useDispatch();
-  const { submitLoading, submitError, submitSuccess } = useSelector((s) => s.contact);
+  const { submitLoading, submitError, submitSuccess } = useSelector(
+    (s) => s.contact,
+  );
 
   const [formData, setFormData] = useState({
     name: "",
@@ -97,7 +102,9 @@ function Contact() {
           <div className="rounded-2xl border border-gray-100 bg-white p-8 text-center shadow-sm transition duration-300 hover:-translate-y-2 hover:border-[#C9A24B] hover:shadow-lg">
             <span className="text-3xl">✉️</span>
             <h3 className="mt-4 font-serif text-lg text-[#0B1F2A]">Email</h3>
-            <p className="mt-2 text-sm text-gray-500">reservations@luxurystay.com</p>
+            <p className="mt-2 text-sm text-gray-500">
+              reservations@luxurystay.com
+            </p>
           </div>
         </div>
       </section>
@@ -114,7 +121,8 @@ function Contact() {
 
             {submitSuccess && (
               <p className="mt-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">
-                Thank you! Your message has been sent. We'll get back to you shortly.
+                Thank you! Your message has been sent. We'll get back to you
+                shortly.
               </p>
             )}
             {submitError && (
@@ -205,7 +213,20 @@ function Contact() {
           </div>
 
           <div className="flex flex-col gap-8">
-          
+            <div className="overflow-hidden rounded-2xl shadow-md">
+              <div className="flex h-64 w-full items-center justify-center bg-[#0B1F2A]/10 text-sm text-gray-500">
+                <iframe
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3620.021788914375!2d67.07429189999999!3d24.8631054!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3eb33ea3db108f41%3A0x42acc4507358b160!2sAptech%20Learning%2C%20Shahrah%20e%20Faisal%20Center!5e0!3m2!1sen!2s!4v1787727186902!5m2!1sen!2s"
+                  width="100%"
+                  height="450"
+                  style={{ border: 0 }}
+                  allowFullScreen=""
+                  loading="lazy"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  title="Hotel Location Map"
+                />
+              </div>
+            </div>
 
             <div className="rounded-2xl bg-white p-8 shadow-md">
               <h3 className="font-serif text-xl text-[#0B1F2A]">
@@ -247,9 +268,7 @@ function Contact() {
                 className="rounded-2xl border border-gray-100 bg-white shadow-sm"
               >
                 <button
-                  onClick={() =>
-                    setOpenFaq(openFaq === index ? null : index)
-                  }
+                  onClick={() => setOpenFaq(openFaq === index ? null : index)}
                   className="flex w-full items-center justify-between px-6 py-5 text-left"
                 >
                   <span className="font-medium text-[#0B1F2A]">

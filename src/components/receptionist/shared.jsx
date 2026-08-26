@@ -17,17 +17,17 @@ export const PAYMENT_METHODS = [
 export function Card({ title, icon, count, action, children }) {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
-      <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-lg">{icon}</span>
-          <h2 className="text-base font-semibold text-[#0B1F2A]">{title}</h2>
+      <div className="px-4 sm:px-6 py-4 border-b border-gray-100 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <span className="text-lg shrink-0">{icon}</span>
+          <h2 className="text-base font-semibold text-[#0B1F2A] truncate">{title}</h2>
           {count !== undefined && (
-            <span className="text-xs bg-[#C9A24B]/15 text-[#0B1F2A] px-2 py-0.5 rounded-full font-medium">
+            <span className="text-xs bg-[#C9A24B]/15 text-[#0B1F2A] px-2 py-0.5 rounded-full font-medium shrink-0">
               {count}
             </span>
           )}
         </div>
-        {action && <div>{action}</div>}
+        {action && <div className="shrink-0">{action}</div>}
       </div>
       {children}
     </div>

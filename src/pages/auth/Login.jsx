@@ -141,6 +141,14 @@ function Login() {
           {touched.password && errors.password && (
             <p className="text-[#8B3A3A] text-xs mt-1.5">{errors.password}</p>
           )}
+          <div className="flex justify-end mt-1">
+            <Link
+              to="/forgot-password"
+              className="text-[11px] tracking-wide text-[#C9A24B] hover:underline"
+            >
+              Forgot password?
+            </Link>
+          </div>
         </div>
 
         <button

@@ -19,6 +19,7 @@ import tablesReducer             from './slice/tables/tableSlice';
 import tableReservationsReducer  from './slice/tableReservations/tableReservationSlice';
 import eventHallsReducer         from './slice/eventHalls/eventHallSlice';
 import eventHallBookingsReducer  from './slice/eventHallBookings/eventHallBookingSlice';
+import passwordResetReducer      from './slice/auth/passwordResetSlice';
 
 export const store = configureStore({
   reducer: {
@@ -42,5 +43,6 @@ export const store = configureStore({
     tableReservations:  tableReservationsReducer,
     eventHalls:         eventHallsReducer,
     eventHallBookings:  eventHallBookingsReducer,
+    passwordReset:      passwordResetReducer,
   },
 });

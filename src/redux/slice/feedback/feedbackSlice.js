@@ -49,6 +49,18 @@ export const fetchAllFeedback = createAsyncThunk(
   }
 );
 
+export const fetchRoomFeedback = createAsyncThunk(
+  "feedback/fetchRoomFeedback",
+  async (roomId, { rejectWithValue }) => {
+    try {
+      const res = await api.get(`${BASE}/room/${roomId}`);
+      return { roomId, averageRating: res.data.averageRating, totalCount: res.data.totalCount, reviews: res.data.reviews };
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || "Failed to load room ratings");
+    }
+  }
+);
+
 export const fetchFeedbackStats = createAsyncThunk(
   "feedback/fetchStats",
   async (_, { rejectWithValue }) => {
@@ -66,6 +78,8 @@ const feedbackSlice = createSlice({
   initialState: {
     feedbackByBooking: {},
     fetchingBookings: {},
+    roomFeedback: {},
+    roomFeedbackLoading: {},
     submitLoading: false,
     submitError: null,
     list: [],
@@ -106,6 +120,19 @@ const feedbackSlice = createSlice({
       .addCase(submitFeedback.rejected, (state, action) => {
         state.submitLoading = false;
         state.submitError = action.payload;
+      })
+
+      // fetchRoomFeedback
+      .addCase(fetchRoomFeedback.pending, (state, action) => {
+        state.roomFeedbackLoading[action.meta.arg] = true;
+      })
+      .addCase(fetchRoomFeedback.fulfilled, (state, action) => {
+        const { roomId, ...data } = action.payload;
+        state.roomFeedbackLoading[roomId] = false;
+        state.roomFeedback[roomId] = data;
+      })
+      .addCase(fetchRoomFeedback.rejected, (state, action) => {
+        state.roomFeedbackLoading[action.meta.arg] = false;
       })
 
       // fetchAllFeedback

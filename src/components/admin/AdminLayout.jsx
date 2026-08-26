@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import NotificationBell from "../notifications/NotificationBell";
 import {
@@ -186,6 +186,37 @@ export default function AdminLayout({ children, title }) {
             </div>
           ))}
         </nav>
+
+        {/* Back to Home */}
+        <div className="relative group px-3 py-2 border-t border-white/10 shrink-0">
+          <Link
+            to="/"
+            className={[
+              "flex items-center gap-3 px-2 py-2 rounded-lg text-sm text-gray-300",
+              "hover:bg-white/5 hover:text-[#C9A24B] transition-colors",
+              collapsed ? "md:justify-center" : "",
+            ].join(" ")}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
+              strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 shrink-0">
+              <path d="M3 12L12 3l9 9" />
+              <path d="M9 21V12h6v9" />
+            </svg>
+            <span className={[
+              "whitespace-nowrap overflow-hidden transition-opacity duration-200",
+              collapsed ? "md:w-0 md:opacity-0" : "opacity-100",
+            ].join(" ")}>
+              Back to Home
+            </span>
+          </Link>
+          {collapsed && (
+            <span className="pointer-events-none absolute left-[calc(100%+10px)] top-1/2 -translate-y-1/2
+                             z-50 whitespace-nowrap rounded-md bg-[#13293D] px-2.5 py-1.5 text-xs text-white
+                             shadow-lg opacity-0 group-hover:opacity-100 transition-opacity hidden md:block">
+              Back to Home
+            </span>
+          )}
+        </div>
 
         {/* Footer identity — pinned to bottom */}
         <div className={[

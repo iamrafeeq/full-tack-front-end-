@@ -7,6 +7,7 @@ import { createBooking, clearBookingError } from "../../redux/slice/Booking/book
 import { createPaymentIntent, clearPaymentState } from "../../redux/slice/payments/paymentsSlice";
 import { fetchAllRooms } from "../../redux/slice/roomSlice/roomSlice";
 import { fetchSettings } from "../../redux/slice/settings/settingsSlice";
+import { fetchRoomFeedback } from "../../redux/slice/feedback/feedbackSlice";
 import { useAuth } from "../../context/AuthContext";
 import StripeCheckoutForm from "../../components/payment/StripeCheckoutForm";
 
@@ -28,6 +29,49 @@ const stripeAppearance = {
   },
 };
 
+function StarRow({ rating, small }) {
+  return (
+    <span className="flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((n) => (
+        <span key={n} className={`${small ? "text-xs" : "text-sm"} leading-none ${n <= Math.round(rating) ? "text-[#C9A24B]" : "text-gray-200"}`}>
+          ★
+        </span>
+      ))}
+    </span>
+  );
+}
+
+function RoomRatingsBlock({ data, loading }) {
+  if (loading) {
+    return <div className="h-14 animate-pulse rounded-lg bg-gray-100" />;
+  }
+  if (!data || data.totalCount === 0) return null;
+  return (
+    <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 space-y-3">
+      <div className="flex items-center gap-2.5">
+        <StarRow rating={data.averageRating} />
+        <span className="font-semibold text-[#0B1F2A] text-sm">{data.averageRating}</span>
+        <span className="text-xs text-gray-400">
+          · {data.totalCount} {data.totalCount === 1 ? "review" : "reviews"}
+        </span>
+      </div>
+      {data.reviews.slice(0, 3).map((r, i) => (
+        <div key={i} className="border-t border-gray-100 pt-3">
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <StarRow rating={r.rating} small />
+            <span className="text-xs text-gray-400">
+              {r.guestName} · {new Date(r.createdAt).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
+            </span>
+          </div>
+          {r.comment && (
+            <p className="text-sm text-gray-600 leading-relaxed">{r.comment}</p>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function Booking() {
   const dispatch    = useDispatch();
   const navigate    = useNavigate();
@@ -40,6 +84,7 @@ function Booking() {
   const { createLoading, createError }   = useSelector((state) => state.bookings);
   const { intentLoading, intentError }   = useSelector((state) => state.payments);
   const hotelSettings = useSelector((state) => state.settings?.data);
+  const { roomFeedback, roomFeedbackLoading } = useSelector((state) => state.feedback);
 
   const [form, setForm] = useState({
     room:          preselectedId || "",
@@ -60,6 +105,10 @@ function Booking() {
     dispatch(clearPaymentState());
     dispatch(fetchSettings());
   }, [dispatch]);
+
+  useEffect(() => {
+    if (form.room) dispatch(fetchRoomFeedback(form.room));
+  }, [form.room, dispatch]);
 
   useEffect(() => {
     if (preselectedId) setForm((prev) => ({ ...prev, room: preselectedId }));
@@ -307,6 +356,14 @@ function Booking() {
                       </>
                     )}
                   </div>
+
+                  {/* Room guest ratings */}
+                  {form.room && (
+                    <RoomRatingsBlock
+                      data={roomFeedback[form.room]}
+                      loading={roomFeedbackLoading[form.room]}
+                    />
+                  )}
 
                   {/* Dates */}
                   <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">

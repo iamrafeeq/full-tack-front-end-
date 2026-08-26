@@ -245,24 +245,24 @@ export default function ReportsDashboard() {
         </p>
 
         <div className="flex flex-wrap items-end gap-3 mt-4 pb-4 border-b border-gray-100">
-          <div>
+          <div className="flex-1 min-w-[140px]">
             <label className="block text-xs text-gray-500 mb-1">Start Date</label>
             <input
               type="date"
               value={startDate}
               max={endDate || undefined}
               onChange={(e) => setStartDate(e.target.value)}
-              className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C9A24B]"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C9A24B]"
             />
           </div>
-          <div>
+          <div className="flex-1 min-w-[140px]">
             <label className="block text-xs text-gray-500 mb-1">End Date</label>
             <input
               type="date"
               value={endDate}
               min={startDate || undefined}
               onChange={(e) => setEndDate(e.target.value)}
-              className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C9A24B]"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C9A24B]"
             />
           </div>
           <button

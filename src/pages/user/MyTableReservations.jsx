@@ -119,8 +119,8 @@ export default function MyTableReservations() {
               </div>
 
               {active.length === 0 ? (
-                <div className="bg-white rounded-xl border border-dashed border-gray-200 px-5 py-6 flex items-center justify-between gap-10">
-                  <div>
+                <div className="bg-white rounded-xl border border-dashed border-gray-200 px-5 py-6 flex flex-wrap items-center justify-between gap-4">
+                  <div className="min-w-0">
                     <p className="text-sm font-medium text-gray-500">No upcoming table reservations.</p>
                     <p className="text-xs text-gray-400 mt-0.5">Book a table for your next visit.</p>
                   </div>

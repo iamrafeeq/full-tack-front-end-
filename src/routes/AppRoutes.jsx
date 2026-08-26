@@ -45,6 +45,8 @@ import AdminEventHallBookings            from "../pages/admin/eventHallBookings/
 import EventHallBooking                  from "../pages/public/EventHallBooking"
 import MyEventHallBookings               from "../pages/user/MyEventHallBookings"
 import ReceptionistEventHallBookings     from "../pages/receptionist/ReceptionistEventHallBookings"
+import ForgotPassword from "../pages/auth/ForgotPassword"
+import ResetPassword  from "../pages/auth/ResetPassword"
 
 const STAFF = [ROLES.ADMIN, ROLES.MANAGER];
 
@@ -55,6 +57,8 @@ function AppRoutes() {
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
       <Route path="/register" element={<GuestRoute><Register /></GuestRoute>} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password/:token" element={<ResetPassword />} />
       <Route path="/about" element={<About />} />
       <Route path="/gallery" element={<Gallery />} />
       <Route path="/contact" element={<Contact />} />

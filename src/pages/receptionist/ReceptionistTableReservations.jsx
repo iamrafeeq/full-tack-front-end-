@@ -56,7 +56,7 @@ export default function ReceptionistTableReservations() {
     <ReceptionistLayout title="Table Reservations">
       <div className="flex flex-wrap gap-3 mb-6 items-center">
         <input type="date" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)}
-          className="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-[#C9A24B]" />
+          className="w-full sm:w-auto text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-[#C9A24B]" />
         <button onClick={() => setDateFilter(todayStr())}
           className="text-sm border border-gray-200 rounded-lg px-3 py-2 hover:bg-gray-50">Today</button>
         <button onClick={() => setDateFilter("")}

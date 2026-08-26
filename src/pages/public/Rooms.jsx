@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchAllRooms } from "../../redux/slice/roomSlice/roomSlice";
+import { fetchRoomFeedback } from "../../redux/slice/feedback/feedbackSlice";
 import { apiBase } from "../../api/axios";
 
 // Fallback image per room type (rooms in DB don't have image fields)
@@ -18,6 +19,7 @@ const TYPE_FILTERS = ["all", "single", "double", "deluxe", "suite"];
 function Rooms() {
   const dispatch = useDispatch();
   const { rooms, loading, error } = useSelector((state) => state.rooms);
+  const { roomFeedback } = useSelector((state) => state.feedback);
 
   const [search,     setSearch]     = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -27,6 +29,13 @@ function Rooms() {
   useEffect(() => {
     dispatch(fetchAllRooms());
   }, [dispatch]);
+
+  // Fetch ratings for every room once the room list is loaded
+  useEffect(() => {
+    if (rooms.length > 0) {
+      rooms.forEach((r) => dispatch(fetchRoomFeedback(r._id)));
+    }
+  }, [rooms.length, dispatch]);
 
   const filtered = rooms
     .filter((r) =>
@@ -206,6 +215,26 @@ function Rooms() {
                       <p className="mt-3 text-sm text-gray-500">
                         {room.capacity} Guests · {room.bedType} bed
                       </p>
+
+                      {/* Guest rating */}
+                      {(() => {
+                        const fb = roomFeedback[room._id];
+                        if (!fb || fb.totalCount === 0) return null;
+                        return (
+                          <div className="mt-2 flex items-center gap-1.5">
+                            {[1, 2, 3, 4, 5].map((n) => (
+                              <span
+                                key={n}
+                                className={`text-sm leading-none ${n <= Math.round(fb.averageRating) ? "text-[#C9A24B]" : "text-gray-200"}`}
+                              >★</span>
+                            ))}
+                            <span className="text-sm font-medium text-[#0B1F2A]">{fb.averageRating}</span>
+                            <span className="text-xs text-gray-400">
+                              ({fb.totalCount} {fb.totalCount === 1 ? "review" : "reviews"})
+                            </span>
+                          </div>
+                        );
+                      })()}
 
                       {/* Amenity pills (first 3) */}
                       {room.amenities?.length > 0 && (
