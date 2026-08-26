@@ -9,14 +9,20 @@ export const required = (value, label = "this field") => {
 export const validName = (value) => {
   if (!value) return;
   const trimmed = value.trim();
-  if (trimmed.length < 3 || trimmed.length > 30)
-    return "Name must be between 3 and 30 characters.";
-  if (!/^[a-zA-Z][a-zA-Z0-9._]*[a-zA-Z0-9]$/.test(trimmed))
-    return "Name must start with a letter and can only contain letters, numbers, periods, and underscores.";
-  if (/\.\.|__/.test(trimmed))
-    return "Name can't contain consecutive periods or underscores.";
-  if (!/[a-zA-Z]{2,}/.test(trimmed))
-    return "Name must contain at least two letters.";
+
+  if (trimmed.length < 3 || trimmed.length > 50)
+    return "Name must be between 3 and 50 characters.";
+
+  // allows letters (including accented characters), single spaces between words,
+  // apostrophes (O'Brien), and hyphens (Anne-Marie)
+  if (!/^[a-zA-Z\u00C0-\u017F]+(?:[\s'-][a-zA-Z\u00C0-\u017F]+)*$/.test(trimmed))
+    return "Name can only contain letters, single spaces, hyphens, and apostrophes.";
+
+  // reject multiple consecutive spaces, hyphens, or apostrophes
+  if (/[\s'-]{2,}/.test(trimmed))
+    return "Name can't contain consecutive spaces, hyphens, or apostrophes.";
+
+  return; // valid — no error
 };
 
 export const validEmail = (value) => {
@@ -77,17 +83,34 @@ export const validPhone = (value) => {
 export const validNationality = (value) => {
   if (!value) return;
   const trimmed = value.trim();
+
   if (trimmed.length < 3 || trimmed.length > 56)
     return "Nationality must be between 3 and 56 characters.";
-  if (!/^[a-zA-Z]+( [a-zA-Z]+)*$/.test(trimmed))
-    return "Nationality can only contain English letters and single spaces.";
+
+  // letters, single spaces, and single hyphens (for compound nationalities)
+  if (!/^[a-zA-Z]+(?:[ ][a-zA-Z]+)*$/.test(trimmed))
+    return "Nationality can only contain letters, single spaces, and hyphens.";
+
+  return; // valid
 };
 
 export const validCNIC = (value) => {
   if (!value) return;
   const trimmed = value.trim();
-  if (!/^\d{5}\d{7}-\d{1}$/.test(trimmed))
-    return "Enter a valid CNIC in the format 42201-1234567-1.";
+
+  // accepts either format: with hyphens (12345-1234567-1) or without (1234512345671)
+  const digitsOnly = trimmed.replace(/-/g, "");
+
+  if (!/^\d{14}$/.test(digitsOnly))
+    return "CNIC must contain exactly 14 digits.";
+
+  // if hyphens are present, they must be in the correct positions
+  if (trimmed.includes("-")) {
+    if (!/^\d{5}-\d{7}-\d{1}$/.test(trimmed))
+      return "CNIC format should be 12345-1234567-1.";
+  }
+
+  return; // valid
 };
 
 export const validPassport = (value) => {
