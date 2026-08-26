@@ -53,7 +53,7 @@ function Navbar() {
     { name: "Home",            to: "/" },
     { name: "About",           to: "/about" },
     { name: "Rooms",           to: "/rooms" },
-    { name: "Facilities",      to: "/facilities" },
+    // { name: "Facilities",      to: "/facilities" },
     { name: "Gallery",         to: "/gallery" },
     { name: "Contact",         to: "/contact" },
     { name: "Reserve a Table", to: "/reserve-table" },
@@ -70,6 +70,17 @@ function Navbar() {
 
   const dropdownLinkClass =
     "block px-4 py-2 text-sm text-[#13293D] hover:bg-[#C9A24B]/10 hover:text-[#C9A24B] transition-colors";
+
+  /* styling-only class helpers for the mobile sheet */
+  const mItem =
+    "nav-item group flex items-center gap-3 rounded-xl px-3.5 py-3 text-[15px] font-medium tracking-wide transition-all duration-300 active:scale-[0.98]";
+  const mIdle   = "text-white/75 hover:bg-white/[0.07] hover:text-white";
+  const mActive = "bg-[#C9A24B]/10 text-[#C9A24B]";
+  const mLabel  =
+    "nav-item px-3.5 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-white/35";
+  const mBar =
+    "h-4 w-[2px] shrink-0 rounded-full bg-[#C9A24B] opacity-30 transition-opacity duration-300 group-hover:opacity-100";
+  const mIcon = "h-[18px] w-[18px] shrink-0 text-[#C9A24B]/75";
 
   return (
     <nav
@@ -291,147 +302,261 @@ function Navbar() {
 
         {/* ── Mobile hamburger ─────────────────────────────────── */}
         <button
-          className={`md:hidden transition-colors duration-500 ${
-            scrolled ? "text-[#0B1F2A]" : "text-white"
+          className={`md:hidden relative flex h-11 w-11 items-center justify-center rounded-full border transition-all duration-500 ${
+            menuOpen
+              ? "border-[#C9A24B] bg-[#C9A24B]/15 text-[#C9A24B]"
+              : scrolled
+                ? "border-[#0B1F2A]/15 bg-[#0B1F2A]/[0.04] text-[#0B1F2A]"
+                : "border-white/25 bg-white/10 text-white"
           }`}
           onClick={() => setMenuOpen((prev) => !prev)}
         >
-          <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
+          <span className="sr-only">Menu</span>
+          <span
+            className={`absolute h-[1.5px] w-5 rounded-full bg-current transition-all duration-300 ${
+              menuOpen ? "rotate-45" : "-translate-y-[6px]"
+            }`}
+          />
+          <span
+            className={`absolute h-[1.5px] w-5 rounded-full bg-current transition-all duration-300 ${
+              menuOpen ? "scale-x-0 opacity-0" : "opacity-100"
+            }`}
+          />
+          <span
+            className={`absolute h-[1.5px] w-5 rounded-full bg-current transition-all duration-300 ${
+              menuOpen ? "-rotate-45" : "translate-y-[6px]"
+            }`}
+          />
         </button>
       </div>
 
       {/* ── Mobile menu ──────────────────────────────────────────── */}
       {menuOpen && (
-        <div className="md:hidden bg-white px-6 py-4 flex flex-col gap-4 shadow-lg">
-          {isAdminRoute ? (
-            <>
-              <NavLink
-                to="/"
-                className="text-[#13293D] font-medium text-sm"
-                onClick={() => setMenuOpen(false)}
-              >
-                Home
-              </NavLink>
-              {isAuthenticated && isStaff ? (
+        <div className="md:hidden nav-panel px-3 pb-3 pt-3">
+          <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#0B1F2A]/95 shadow-[0_30px_60px_-25px_rgba(0,0,0,0.85)] backdrop-blur-2xl">
+            <div className="h-px w-full bg-gradient-to-r from-transparent via-[#C9A24B]/70 to-transparent" />
+
+            <div className="nav-scroll flex max-h-[calc(100vh-8.5rem)] flex-col gap-0.5 overflow-y-auto p-2">
+              {isAdminRoute ? (
                 <>
-                  {roleLinks.map((link) => (
+                  <p className={mLabel} style={{ animationDelay: "20ms" }}>Navigation</p>
+
+                  <NavLink
+                    to="/"
+                    className={({ isActive }) => `${mItem} ${isActive ? mActive : mIdle}`}
+                    style={{ animationDelay: "60ms" }}
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    <span className={mBar} />
+                    Home
+                  </NavLink>
+
+                  {isAuthenticated && isStaff ? (
+                    <>
+                      <p className={mLabel} style={{ animationDelay: "90ms" }}>
+                        {role === "admin" ? "Admin" : "My Panel"}
+                      </p>
+                      {roleLinks.map((link, i) => (
+                        <NavLink
+                          key={link.to}
+                          to={link.to}
+                          className={({ isActive }) => `${mItem} ${isActive ? mActive : mIdle}`}
+                          style={{ animationDelay: `${120 + i * 40}ms` }}
+                          onClick={() => setMenuOpen(false)}
+                        >
+                          <span className={mBar} />
+                          {link.label}
+                        </NavLink>
+                      ))}
+
+                      <div className="my-2 h-px bg-white/10" />
+
+                      <button
+                        onClick={() => { setMenuOpen(false); logout(); }}
+                        className={`${mItem} w-full justify-start text-left text-red-400 hover:bg-red-500/10 hover:text-red-300`}
+                        style={{ animationDelay: "220ms" }}
+                      >
+                        <svg className="h-[18px] w-[18px] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" />
+                        </svg>
+                        Logout
+                      </button>
+                    </>
+                  ) : (
                     <NavLink
-                      key={link.to}
-                      to={link.to}
-                      className="text-[#13293D] font-medium text-sm"
+                      to="/login"
+                      className={`${mItem} mt-1 justify-center border border-[#C9A24B]/60 bg-[#C9A24B]/10 text-[#C9A24B] hover:bg-[#C9A24B] hover:text-[#0B1F2A]`}
+                      style={{ animationDelay: "100ms" }}
                       onClick={() => setMenuOpen(false)}
                     >
-                      {link.label}
+                      Login
+                    </NavLink>
+                  )}
+                </>
+              ) : (
+                <>
+                  <p className={mLabel} style={{ animationDelay: "20ms" }}>Menu</p>
+
+                  {navLinks.map((link, i) => (
+                    <NavLink
+                      key={link.name}
+                      to={link.to}
+                      className={({ isActive }) => `${mItem} ${isActive ? mActive : mIdle}`}
+                      style={{ animationDelay: `${50 + i * 35}ms` }}
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      <span className={mBar} />
+                      {link.name}
                     </NavLink>
                   ))}
-                  <button
-                    onClick={() => { setMenuOpen(false); logout(); }}
-                    className="text-[#13293D] font-medium text-sm text-left"
-                  >
-                    Logout
-                  </button>
-                </>
-              ) : (
-                <NavLink
-                  to="/login"
-                  className="text-[#13293D] font-medium text-sm"
-                  onClick={() => setMenuOpen(false)}
-                >
-                  Login
-                </NavLink>
-              )}
-            </>
-          ) : (
-            <>
-              {navLinks.map((link) => (
-                <NavLink
-                  key={link.name}
-                  to={link.to}
-                  className="text-[#13293D] font-medium text-sm"
-                  onClick={() => setMenuOpen(false)}
-                >
-                  {link.name}
-                </NavLink>
-              ))}
 
-              {!isAuthenticated ? (
-                <>
-                  <NavLink
-                    to="/login"
-                    className="text-[#13293D] font-medium text-sm"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    Login
-                  </NavLink>
-                  <NavLink
-                    to="/register"
-                    className="text-[#13293D] font-medium text-sm"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    Register
-                  </NavLink>
-                </>
-              ) : (
-                <>
-                  <div className="border-t border-gray-100 my-1" />
-                  <span className="text-xs text-gray-400 font-medium uppercase tracking-wide">{user?.name}</span>
-                  <NavLink
-                    to="/signeuser"
-                    className="text-[#13293D] font-medium text-sm"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    Profile
-                  </NavLink>
-                  {showMyBookings && (
-                    <NavLink
-                      to="/my-bookings"
-                      className="text-[#13293D] font-medium text-sm"
-                      onClick={() => setMenuOpen(false)}
-                    >
-                      My Bookings
-                    </NavLink>
+                  {!isAuthenticated ? (
+                    <>
+                      <div className="my-2 h-px bg-white/10" />
+                      <div className="nav-item flex flex-col gap-2 px-1 pb-1" style={{ animationDelay: "320ms" }}>
+                        <NavLink
+                          to="/login"
+                          className="rounded-xl border border-white/20 px-4 py-3 text-center text-sm font-semibold tracking-wide text-white transition-all duration-300 hover:border-[#C9A24B] hover:text-[#C9A24B] active:scale-[0.98]"
+                          onClick={() => setMenuOpen(false)}
+                        >
+                          Login
+                        </NavLink>
+                        <NavLink
+                          to="/register"
+                          className="rounded-xl bg-[#C9A24B] px-4 py-3 text-center text-sm font-semibold tracking-wide text-[#0B1F2A] shadow-[0_10px_25px_-12px_rgba(201,162,75,0.9)] transition-all duration-300 hover:bg-[#d8b straight]"
+                          onClick={() => setMenuOpen(false)}
+                        >
+                          Register
+                        </NavLink>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="my-2 h-px bg-white/10" />
+
+                      <div
+                        className="nav-item mx-1 mb-1 flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-3"
+                        style={{ animationDelay: "320ms" }}
+                      >
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#C9A24B] text-sm font-semibold text-[#0B1F2A]">
+                          {user?.name?.charAt(0)?.toUpperCase()}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium text-white">{user?.name}</p>
+                          {role && role !== "user" && (
+                            <p className="mt-0.5 text-[10px] uppercase tracking-[0.18em] text-[#C9A24B]">{role}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      <p className={mLabel} style={{ animationDelay: "350ms" }}>Account</p>
+
+                      <NavLink
+                        to="/signeuser"
+                        className={({ isActive }) => `${mItem} ${isActive ? mActive : mIdle}`}
+                        style={{ animationDelay: "380ms" }}
+                        onClick={() => setMenuOpen(false)}
+                      >
+                        <svg className={mIcon} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                        </svg>
+                        Profile
+                      </NavLink>
+
+                      {showMyBookings && (
+                        <NavLink
+                          to="/my-bookings"
+                          className={({ isActive }) => `${mItem} ${isActive ? mActive : mIdle}`}
+                          style={{ animationDelay: "410ms" }}
+                          onClick={() => setMenuOpen(false)}
+                        >
+                          <svg className={mIcon} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+                          </svg>
+                          My Bookings
+                        </NavLink>
+                      )}
+
+                      {role === "user" && (
+                        <NavLink
+                          to="/my-table-reservations"
+                          className={({ isActive }) => `${mItem} ${isActive ? mActive : mIdle}`}
+                          style={{ animationDelay: "440ms" }}
+                          onClick={() => setMenuOpen(false)}
+                        >
+                          <svg className={mIcon} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v7.5a2.25 2.25 0 0 0 4.5 0V3M9 10.5V21M17.25 3c-1.243 0-2.25 2.239-2.25 5s1.007 5 2.25 5V21" />
+                          </svg>
+                          My Table Reservations
+                        </NavLink>
+                      )}
+
+                      {role === "user" && (
+                        <NavLink
+                          to="/my-event-hall-bookings"
+                          className={({ isActive }) => `${mItem} ${isActive ? mActive : mIdle}`}
+                          style={{ animationDelay: "470ms" }}
+                          onClick={() => setMenuOpen(false)}
+                        >
+                          <svg className={mIcon} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5M4.5 21V6.75a.75.75 0 0 1 .4-.664l6.75-3.6a.75.75 0 0 1 .7 0l6.75 3.6a.75.75 0 0 1 .4.664V21M9.75 21v-4.5h4.5V21M9 10.5h.008v.008H9V10.5Zm3 0h.008v.008H12V10.5Zm3 0h.008v.008H15V10.5Z" />
+                          </svg>
+                          My Event Hall Bookings
+                        </NavLink>
+                      )}
+
+                      {isStaff && (
+                        <NavLink
+                          to={panelHome}
+                          className={({ isActive }) => `${mItem} ${isActive ? mActive : mIdle}`}
+                          style={{ animationDelay: "500ms" }}
+                          onClick={() => setMenuOpen(false)}
+                        >
+                          <svg className={mIcon} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6Zm10.5 0A2.25 2.25 0 0 1 16.5 3.75h1.75A2.25 2.25 0 0 1 20.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H16.5a2.25 2.25 0 0 1-2.25-2.25V6Zm-10.5 9.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25Zm10.5 0A2.25 2.25 0 0 1 16.5 13.5h1.75a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H16.5A2.25 2.25 0 0 1 14.25 18v-2.25Z" />
+                          </svg>
+                          {role === "admin" ? "Admin Panel" : role === "manager" ? "Manager Panel" : "My Panel"}
+                        </NavLink>
+                      )}
+
+                      <div className="my-2 h-px bg-white/10" />
+
+                      <button
+                        onClick={() => { setMenuOpen(false); logout(); }}
+                        className={`${mItem} w-full justify-start text-left text-red-400 hover:bg-red-500/10 hover:text-red-300`}
+                        style={{ animationDelay: "530ms" }}
+                      >
+                        <svg className="h-[18px] w-[18px] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" />
+                        </svg>
+                        Logout
+                      </button>
+                    </>
                   )}
-                  {role === "user" && (
-                    <NavLink
-                      to="/my-table-reservations"
-                      className="text-[#13293D] font-medium text-sm"
-                      onClick={() => setMenuOpen(false)}
-                    >
-                      My Table Reservations
-                    </NavLink>
-                  )}
-                  {role === "user" && (
-                    <NavLink
-                      to="/my-event-hall-bookings"
-                      className="text-[#13293D] font-medium text-sm"
-                      onClick={() => setMenuOpen(false)}
-                    >
-                      My Event Hall Bookings
-                    </NavLink>
-                  )}
-                  {isStaff && (
-                    <NavLink
-                      to={panelHome}
-                      className="text-[#13293D] font-medium text-sm"
-                      onClick={() => setMenuOpen(false)}
-                    >
-                      {role === "admin" ? "Admin Panel" : role === "manager" ? "Manager Panel" : "My Panel"}
-                    </NavLink>
-                  )}
-                  <button
-                    onClick={() => { setMenuOpen(false); logout(); }}
-                    className="text-red-500 font-medium text-sm text-left"
-                  >
-                    Logout
-                  </button>
                 </>
               )}
-            </>
-          )}
+            </div>
+          </div>
         </div>
       )}
+
+      <style>{`
+        @keyframes navPanelIn {
+          from { opacity: 0; transform: translateY(-10px) scale(0.985); }
+          to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes navItemIn {
+          from { opacity: 0; transform: translateY(-6px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .nav-panel { animation: navPanelIn .32s cubic-bezier(.16,1,.3,1) both; }
+        .nav-item  { animation: navItemIn .38s cubic-bezier(.16,1,.3,1) both; }
+        .nav-scroll::-webkit-scrollbar { width: 0px; }
+        .nav-scroll { scrollbar-width: none; }
+        @media (prefers-reduced-motion: reduce) {
+          .nav-panel, .nav-item { animation: none; }
+        }
+      `}</style>
     </nav>
   );
 }

@@ -17,7 +17,82 @@ const STATUS_COLORS  = {
   maintenance: "bg-yellow-100 text-yellow-700",
 };
 
-const EMPTY_FORM = { hallName: "", capacity: "", hourlyRate: "", amenities: "" };
+const EMPTY_FORM = { hallName: "", capacity: "", hourlyRate: "" };
+
+const PRESET_AMENITIES = [
+  "WiFi", "Projector", "PA System", "Stage", "Dance Floor",
+  "Catering", "Parking", "Air Conditioning", "Sound System",
+  "Lighting", "Photo Booth", "Backdrop", "Tables & Chairs",
+  "Podium", "Screen / Display",
+];
+
+function AmenitiesInput({ value, onChange }) {
+  const [input, setInput] = useState("");
+
+  const add = (item) => {
+    const trimmed = item.trim();
+    if (!trimmed) return;
+    if (!value.map((v) => v.toLowerCase()).includes(trimmed.toLowerCase())) {
+      onChange([...value, trimmed]);
+    }
+    setInput("");
+  };
+
+  const remove = (item) => onChange(value.filter((v) => v !== item));
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") { e.preventDefault(); add(input); }
+  };
+
+  return (
+    <div className="space-y-3">
+      {/* Preset suggestions */}
+      <div className="flex flex-wrap gap-1.5">
+        {PRESET_AMENITIES.map((p) => {
+          const active = value.map((v) => v.toLowerCase()).includes(p.toLowerCase());
+          return (
+            <button key={p} type="button" onClick={() => active ? remove(p) : add(p)}
+              className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                active
+                  ? "bg-[#C9A24B] text-[#0B1F2A] border-[#C9A24B] font-medium"
+                  : "bg-white text-gray-600 border-gray-300 hover:border-[#C9A24B] hover:text-[#7a5c1e]"
+              }`}>
+              {active ? "✓ " : "+ "}{p}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Custom input */}
+      <div className="flex gap-2">
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Add custom amenity…"
+          className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[#C9A24B]"
+        />
+        <button type="button" onClick={() => add(input)}
+          className="px-3 py-2 text-sm rounded-md bg-[#0B1F2A] text-white hover:opacity-90 whitespace-nowrap">
+          Add
+        </button>
+      </div>
+
+      {/* Selected chips */}
+      {value.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 p-2.5 bg-gray-50 rounded-md border border-gray-200 min-h-[36px]">
+          {value.map((a) => (
+            <span key={a} className="inline-flex items-center gap-1 text-xs bg-[#C9A24B]/15 text-[#7a5c1e] px-2.5 py-1 rounded-full font-medium">
+              {a}
+              <button type="button" onClick={() => remove(a)}
+                className="text-[#7a5c1e] hover:text-red-500 leading-none font-bold">×</button>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function HallFormModal({ editHall, onClose, onSuccess }) {
   const dispatch = useDispatch();
@@ -29,10 +104,10 @@ function HallFormModal({ editHall, onClose, onSuccess }) {
           hallName:   editHall.hallName   || "",
           capacity:   editHall.capacity   || "",
           hourlyRate: editHall.hourlyRate  || "",
-          amenities:  (editHall.amenities || []).join(", "),
         }
       : EMPTY_FORM
   );
+  const [amenities, setAmenities] = useState(editHall ? (editHall.amenities || []) : []);
   const [errs, setErrs] = useState({});
 
   useEffect(() => { dispatch(clearFormErrors()); }, [dispatch]);
@@ -53,15 +128,11 @@ function HallFormModal({ editHall, onClose, onSuccess }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!validate()) return;
-    const amenitiesArr = form.amenities
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
     const data = {
       hallName:   form.hallName.trim(),
       capacity:   Number(form.capacity),
       hourlyRate: Number(form.hourlyRate),
-      amenities:  amenitiesArr,
+      amenities,
     };
     const action = isEditing
       ? updateEventHall({ id: editHall._id, data })
@@ -77,8 +148,8 @@ function HallFormModal({ editHall, onClose, onSuccess }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md z-10">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-lg z-10 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white z-10">
           <h2 className="text-lg font-serif text-[#0B1F2A]">
             {isEditing ? `Edit Hall — ${editHall.hallName}` : "Add New Event Hall"}
           </h2>
@@ -115,12 +186,10 @@ function HallFormModal({ editHall, onClose, onSuccess }) {
           </div>
 
           <div>
-            <label className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Amenities</label>
-            <input value={form.amenities}
-              onChange={(e) => setForm((p) => ({ ...p, amenities: e.target.value }))}
-              className={field("amenities")}
-              placeholder="WiFi, Projector, PA System, Stage (comma-separated)" />
-            <p className="text-xs text-gray-400 mt-1">Separate each amenity with a comma.</p>
+            <label className="block text-xs uppercase tracking-wide text-gray-500 mb-2">
+              Amenities <span className="normal-case text-gray-400 font-normal">(click to select, or add your own)</span>
+            </label>
+            <AmenitiesInput value={amenities} onChange={setAmenities} />
           </div>
 
           <div className="flex justify-end gap-3 pt-2">

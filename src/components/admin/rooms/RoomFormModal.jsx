@@ -7,6 +7,56 @@ const ROOM_TYPES = ["single", "double", "deluxe", "suite"];
 const BED_TYPES  = ["single", "twin", "queen", "king"];
 const AMENITIES  = ["AC", "WiFi", "TV", "Minibar", "Balcony", "RoomService", "Heater"];
 
+function AmenitiesInput({ value, presets, onChange }) {
+  const [input, setInput] = useState("");
+
+  const add = (item) => {
+    const trimmed = item.trim();
+    if (!trimmed) return;
+    if (!value.map((v) => v.toLowerCase()).includes(trimmed.toLowerCase())) {
+      onChange([...value, trimmed]);
+    }
+    setInput("");
+  };
+
+  const remove = (item) => onChange(value.filter((v) => v !== item));
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") { e.preventDefault(); add(input); }
+  };
+
+  const custom = value.filter((v) => !presets.map((p) => p.toLowerCase()).includes(v.toLowerCase()));
+
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-2">
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Add custom amenity…"
+          className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[#C9A24B]"
+        />
+        <button type="button" onClick={() => add(input)}
+          className="px-3 py-2 text-sm rounded-md bg-[#0B1F2A] text-white hover:opacity-90 whitespace-nowrap">
+          Add
+        </button>
+      </div>
+      {custom.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 p-2.5 bg-gray-50 rounded-md border border-gray-200">
+          {custom.map((a) => (
+            <span key={a} className="inline-flex items-center gap-1 text-xs bg-[#C9A24B]/15 text-[#7a5c1e] px-2.5 py-1 rounded-full font-medium">
+              {a}
+              <button type="button" onClick={() => remove(a)}
+                className="text-[#7a5c1e] hover:text-red-500 leading-none font-bold">×</button>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 const EMPTY_FORM = {
   roomNumber: "", type: "single", floor: "", capacity: "",
   bedType: "single", price: "", discountPrice: "",
@@ -215,8 +265,11 @@ export default function RoomFormModal({ editRoom, onClose, onSuccess }) {
 
           {/* Amenities */}
           <div>
-            <label className="block text-xs uppercase tracking-wide text-gray-500 mb-2">Amenities</label>
-            <div className="flex flex-wrap gap-2">
+            <label className="block text-xs uppercase tracking-wide text-gray-500 mb-2">
+              Amenities <span className="normal-case text-gray-400 font-normal">(select presets or add your own)</span>
+            </label>
+            {/* Preset toggles */}
+            <div className="flex flex-wrap gap-2 mb-3">
               {AMENITIES.map((a) => (
                 <button
                   key={a}
@@ -224,14 +277,20 @@ export default function RoomFormModal({ editRoom, onClose, onSuccess }) {
                   onClick={() => toggleAmenity(a)}
                   className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
                     form.amenities.includes(a)
-                      ? "bg-[#0B1F2A] text-[#C9A24B] border-[#0B1F2A]"
+                      ? "bg-[#0B1F2A] text-[#C9A24B] border-[#0B1F2A] font-medium"
                       : "border-gray-300 text-gray-500 hover:border-[#C9A24B]"
                   }`}
                 >
-                  {a}
+                  {form.amenities.includes(a) ? "✓ " : "+ "}{a}
                 </button>
               ))}
             </div>
+            {/* Custom amenity input */}
+            <AmenitiesInput
+              value={form.amenities}
+              presets={AMENITIES}
+              onChange={(updated) => setForm((prev) => ({ ...prev, amenities: updated }))}
+            />
           </div>
 
           {/* Smoking allowed */}

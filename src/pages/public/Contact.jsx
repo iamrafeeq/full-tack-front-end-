@@ -205,11 +205,7 @@ function Contact() {
           </div>
 
           <div className="flex flex-col gap-8">
-            <div className="overflow-hidden rounded-2xl shadow-md">
-              <div className="flex h-64 w-full items-center justify-center bg-[#0B1F2A]/10 text-sm text-gray-500">
-                Google Map Placeholder
-              </div>
-            </div>
+          
 
             <div className="rounded-2xl bg-white p-8 shadow-md">
               <h3 className="font-serif text-xl text-[#0B1F2A]">
