@@ -1,16 +1,21 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { payBooking } from "../../redux/slice/Booking/bookingSlice";
 import { PAYMENT_METHODS } from "./shared";
+import { notifySuccess, notifyError } from "../../utils/toast";
+import Spinner from "../Spinner";
 
 export default function CollectPaymentModal({ bookingId, onClose, onSuccess }) {
   const dispatch = useDispatch();
   const { payLoading, payError } = useSelector((s) => s.bookings);
   const [payMethod, setPayMethod] = useState("cash");
 
+  useEffect(() => { if (payError) notifyError(payError); }, [payError]);
+
   const handleSubmit = async () => {
     const res = await dispatch(payBooking({ bookingId, paymentMethod: payMethod }));
     if (!res.error) {
+      notifySuccess("Payment recorded successfully.");
       onSuccess?.();
       onClose();
     }
@@ -22,10 +27,6 @@ export default function CollectPaymentModal({ bookingId, onClose, onSuccess }) {
       <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-sm z-10 p-6">
         <h3 className="text-lg font-serif text-[#0B1F2A] mb-1">Collect Payment</h3>
         <p className="text-sm text-gray-400 mb-5">Select the payment method received from the guest.</p>
-
-        {payError && (
-          <p className="mb-4 text-sm text-red-600 bg-red-50 px-3 py-2 rounded">{payError}</p>
-        )}
 
         <div className="space-y-2 mb-6">
           {PAYMENT_METHODS.map((m) => (
@@ -60,9 +61,9 @@ export default function CollectPaymentModal({ bookingId, onClose, onSuccess }) {
           <button
             onClick={handleSubmit}
             disabled={payLoading}
-            className="flex-1 bg-[#0B1F2A] text-white text-sm px-4 py-2 rounded-md hover:opacity-90 disabled:opacity-60"
+            className="flex-1 inline-flex items-center gap-1.5 justify-center bg-[#0B1F2A] text-white text-sm px-4 py-2 rounded-md hover:opacity-90 disabled:opacity-60"
           >
-            {payLoading ? "Recording…" : "Confirm Payment"}
+            {payLoading ? <><Spinner size="sm" color="white" /> Confirm Payment</> : "Confirm Payment"}
           </button>
         </div>
       </div>

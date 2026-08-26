@@ -1,15 +1,19 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { AuthLogin } from "../../redux/slice/auth/loginAuthSlice";
 import { useAuth } from "../../context/AuthContext";
 import { required, validEmail, strongPassword, runValidators } from "../../utils/validators";
+import { notifyError } from "../../utils/toast";
+import Spinner from "../../components/Spinner";
 
 function Login() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { loading, error } = useSelector((state) => state.login);
   const { login } = useAuth();
+
+  useEffect(() => { if (error) notifyError(error); }, [error]);
 
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
@@ -91,12 +95,6 @@ function Login() {
         <p className="text-sm text-[#0B1F2A]/50 mt-4">Sign in to your account</p>
       </div>
 
-      {error && (
-        <div className="mb-8 pl-4 py-3 border-l-2 border-[#8B3A3A] bg-[#8B3A3A]/5 text-sm text-[#8B3A3A]">
-          {error}
-        </div>
-      )}
-
       <form onSubmit={handleSubmit} noValidate className="space-y-6">
         <div>
           <label className="block text-[11px] tracking-[0.1em] uppercase text-[#0B1F2A]/60 mb-1.5">
@@ -154,9 +152,9 @@ function Login() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-[#0B1F2A] text-[#FBF8F2] py-3.5 mt-2 text-[11px] tracking-[0.2em] uppercase border border-[#0B1F2A] hover:bg-[#0B1F2A]/90 hover:border-[#C9A24B] transition-colors disabled:opacity-50"
+          className="w-full inline-flex items-center justify-center gap-2 bg-[#0B1F2A] text-[#FBF8F2] py-3.5 mt-2 text-[11px] tracking-[0.2em] uppercase border border-[#0B1F2A] hover:bg-[#0B1F2A]/90 hover:border-[#C9A24B] transition-colors disabled:opacity-50"
         >
-          {loading ? "Signing in..." : "Sign In"}
+          {loading ? <><Spinner size="sm" color="white" /> Signing in…</> : "Sign In"}
         </button>
       </form>
 

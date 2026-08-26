@@ -12,9 +12,12 @@ import {
 import AdminLayout from "../../../components/admin/AdminLayout";
 import RoomFormModal from "../../../components/admin/rooms/RoomFormModal";
 import {
-  StatCard, TableCard, Th, Badge, Spinner, ErrorBanner, EmptyState, Modal, btn,
+  StatCard, TableCard, Th, Badge, EmptyState, Modal, btn,
 } from "../../../components/admin/AdminUI";
+import Spinner from "../../../components/Spinner";
+import SkeletonRow from "../../../components/SkeletonRow";
 import { apiBase } from "../../../api/axios";
+import { notifySuccess, notifyError } from "../../../utils/toast";
 
 const TYPE_IMAGES = {
   single: "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=900&q=80",
@@ -56,16 +59,15 @@ export default function Rooms() {
   const [includeInactive, setIncludeInactive] = useState(false);
   const [modal,           setModal]           = useState(null);
   const [viewRoom,        setViewRoom]        = useState(null);
-  const [confirmDelete,   setConfirmDelete]   = useState(null);
-  const [deleteModalError, setDeleteModalError] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
-  // Re-fetch whenever the includeInactive toggle changes
-  useEffect(() => {
-    dispatch(fetchAllRooms(includeInactive));
-  }, [dispatch, includeInactive]);
-
-  // Clear action-level errors when the page unmounts to avoid stale banners
+  useEffect(() => { dispatch(fetchAllRooms(includeInactive)); }, [dispatch, includeInactive]);
   useEffect(() => () => dispatch(clearActionErrors()), [dispatch]);
+
+  useEffect(() => { if (statusError) notifyError(statusError); }, [statusError]);
+  useEffect(() => { if (deactivateError) notifyError(deactivateError); }, [deactivateError]);
+  useEffect(() => { if (activateError) notifyError(activateError); }, [activateError]);
+  useEffect(() => { if (error) notifyError(error); }, [error]);
 
   const filtered = useMemo(
     () =>
@@ -97,23 +99,32 @@ export default function Rooms() {
   }, [rooms, total]);
 
   const openDeleteModal = (room) => {
-    setDeleteModalError(null);
     dispatch(clearDeleteError());
     setConfirmDelete(room);
   };
 
   const handleDelete = () => {
     if (!confirmDelete) return;
-    setDeleteModalError(null);
     dispatch(deleteRoom(confirmDelete._id)).then((res) => {
       if (!res.error) {
+        notifySuccess(`Room ${confirmDelete.roomNumber} deleted.`);
         setConfirmDelete(null);
       } else {
-        // res.payload is the message string from rejectWithValue
-        setDeleteModalError(res.payload || "Failed to delete room.");
+        notifyError(res.payload || "Failed to delete room.");
+        setConfirmDelete(null);
       }
     });
   };
+
+  const handleDeactivate = (room) =>
+    dispatch(deactivateRoom(room._id)).then((res) => {
+      if (!res.error) notifySuccess(`Room ${room.roomNumber} deactivated.`);
+    });
+
+  const handleActivate = (room) =>
+    dispatch(activateRoom(room._id)).then((res) => {
+      if (!res.error) notifySuccess(`Room ${room.roomNumber} activated.`);
+    });
 
   const resetFilters = () => {
     setSearch("");
@@ -188,18 +199,7 @@ export default function Rooms() {
         <button onClick={() => setModal("create")} className={btn.primary}>+ Add Room</button>
       </div>
 
-      {/* Page-level error banners */}
-      <ErrorBanner>{statusError}</ErrorBanner>
-      <ErrorBanner>{deactivateError}</ErrorBanner>
-      <ErrorBanner>{activateError}</ErrorBanner>
-
-      {loading && <Spinner />}
-      {!loading && error && (
-        <ErrorBanner onRetry={() => dispatch(fetchAllRooms(includeInactive))}>{error}</ErrorBanner>
-      )}
-
-      {!loading && !error && (
-        <TableCard>
+      <TableCard>
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-100 text-left">
@@ -209,7 +209,9 @@ export default function Rooms() {
               </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 ? (
+              {loading
+                ? Array.from({ length: 5 }, (_, i) => <SkeletonRow key={i} cols={6} />)
+                : filtered.length === 0 ? (
                 <tr>
                   <td colSpan={10}>
                     <EmptyState
@@ -293,19 +295,19 @@ export default function Rooms() {
 
                           {isInactive ? (
                             <button
-                              onClick={() => dispatch(activateRoom(room._id))}
+                              onClick={() => handleActivate(room)}
                               disabled={activateLoading === room._id}
-                              className={btn.secondary}
+                              className={`${btn.secondary} inline-flex items-center justify-center`}
                             >
-                              {activateLoading === room._id ? "…" : "Activate"}
+                              {activateLoading === room._id ? <Spinner size="sm" color="#0B1F2A" /> : "Activate"}
                             </button>
                           ) : (
                             <button
-                              onClick={() => dispatch(deactivateRoom(room._id))}
+                              onClick={() => handleDeactivate(room)}
                               disabled={deactivateLoading === room._id}
-                              className={btn.secondary}
+                              className={`${btn.secondary} inline-flex items-center justify-center`}
                             >
-                              {deactivateLoading === room._id ? "…" : "Deactivate"}
+                              {deactivateLoading === room._id ? <Spinner size="sm" color="#0B1F2A" /> : "Deactivate"}
                             </button>
                           )}
 
@@ -323,8 +325,7 @@ export default function Rooms() {
               )}
             </tbody>
           </table>
-        </TableCard>
-      )}
+      </TableCard>
 
       {/* Room view modal */}
       {viewRoom && (() => {
@@ -437,26 +438,16 @@ export default function Rooms() {
           footer={
             <>
               <button onClick={() => setConfirmDelete(null)} className={btn.secondary}>Cancel</button>
-              <button onClick={handleDelete} disabled={deleteLoading} className={btn.danger}>
-                {deleteLoading ? "Deleting…" : "Yes, Delete"}
+              <button onClick={handleDelete} disabled={deleteLoading} className={`${btn.danger} inline-flex items-center gap-1.5 justify-center`}>
+                {deleteLoading ? <><Spinner size="sm" color="white" /> Deleting…</> : "Yes, Delete"}
               </button>
             </>
           }
         >
-          {deleteModalError ? (
-            <div className="rounded-lg bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-700">
-              <p className="font-medium mb-1">Cannot delete this room</p>
-              <p>{deleteModalError}</p>
-              <p className="mt-2 text-red-500 text-xs">
-                Use <strong>Deactivate</strong> to take it out of circulation while preserving its history.
-              </p>
-            </div>
-          ) : (
-            <p className="text-sm text-gray-500">
-              This permanently removes the room. Only rooms with <em>no booking history at all</em> can
-              be deleted — rooms with past bookings must be deactivated instead.
-            </p>
-          )}
+          <p className="text-sm text-gray-500">
+            This permanently removes the room. Only rooms with <em>no booking history at all</em> can
+            be deleted — rooms with past bookings must be deactivated instead.
+          </p>
         </Modal>
       )}
     </AdminLayout>

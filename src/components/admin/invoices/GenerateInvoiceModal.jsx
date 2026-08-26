@@ -6,6 +6,7 @@ import {
 } from "../../../redux/slice/invoice/invoiceSlice";
 import { fetchBookings } from "../../../redux/slice/Booking/bookingSlice";
 import { fmtDate } from "./invoiceHelpers";
+import { notifySuccess, notifyError } from "../../../utils/toast";
 
 export default function GenerateInvoiceModal({ onClose }) {
   const dispatch = useDispatch();
@@ -15,7 +16,8 @@ export default function GenerateInvoiceModal({ onClose }) {
 
   const [bookingId, setBookingId] = useState("");
   const [extras, setExtras]       = useState([{ description: "", amount: "" }]);
-  const [success, setSuccess]     = useState(false);
+
+  useEffect(() => { if (generateError) notifyError(generateError); }, [generateError]);
 
   useEffect(() => {
     dispatch(fetchBookings());
@@ -51,8 +53,8 @@ export default function GenerateInvoiceModal({ onClose }) {
     );
 
     if (result.meta.requestStatus === "fulfilled") {
-      setSuccess(true);
-      setTimeout(onClose, 1200);
+      notifySuccess("Invoice generated successfully!");
+      onClose();
     }
   };
 
@@ -65,17 +67,7 @@ export default function GenerateInvoiceModal({ onClose }) {
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
         </div>
 
-        {success ? (
-          <div className="px-6 py-10 text-center">
-            <div className="text-4xl mb-3">✅</div>
-            <p className="text-green-700 font-medium">Invoice generated successfully!</p>
-          </div>
-        ) : (
           <form onSubmit={handleSubmit} className="px-6 py-5 space-y-5">
-            {generateError && (
-              <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded">{generateError}</p>
-            )}
-
             {/* Booking selector */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -186,7 +178,6 @@ export default function GenerateInvoiceModal({ onClose }) {
               </button>
             </div>
           </form>
-        )}
       </div>
     </div>
   );

@@ -8,7 +8,9 @@ import {
   clearActionErrors,
 } from "../../redux/slice/tableReservations/tableReservationSlice";
 import ReceptionistLayout from "../../components/receptionist/ReceptionistLayout";
-import { Card, THead, Spinner, ErrBanner, Empty, fmtDate } from "../../components/receptionist/shared";
+import { Card, THead, Empty, fmtDate } from "../../components/receptionist/shared";
+import SkeletonRow from "../../components/SkeletonRow";
+import { notifySuccess, notifyError } from "../../utils/toast";
 
 const STATUS_STYLES = {
   reserved:  "bg-blue-100 text-blue-700",
@@ -48,9 +50,29 @@ export default function ReceptionistTableReservations() {
   useEffect(() => { fetch(); }, [dateFilter, statusFilter]);
   useEffect(() => () => dispatch(clearActionErrors()), [dispatch]);
 
+  useEffect(() => { if (seatError)     notifyError(seatError); },     [seatError]);
+  useEffect(() => { if (completeError) notifyError(completeError); }, [completeError]);
+  useEffect(() => { if (cancelError)   notifyError(cancelError); },   [cancelError]);
+  useEffect(() => { if (error)         notifyError(error); },         [error]);
+
   const filtered = reservations.filter((r) => {
     return statusFilter === "all" || r.status === statusFilter;
   });
+
+  const handleSeat = (id) =>
+    dispatch(seatTableReservation(id)).then((res) => {
+      if (!res.error) notifySuccess("Guest seated.");
+    });
+
+  const handleComplete = (id) =>
+    dispatch(completeTableReservation(id)).then((res) => {
+      if (!res.error) notifySuccess("Reservation completed.");
+    });
+
+  const handleCancel = (id) =>
+    dispatch(cancelTableReservation(id)).then((res) => {
+      if (!res.error) notifySuccess("Reservation cancelled.");
+    });
 
   return (
     <ReceptionistLayout title="Table Reservations">
@@ -74,23 +96,22 @@ export default function ReceptionistTableReservations() {
         <span className="text-sm text-gray-400 ml-auto">{filtered.length} reservation{filtered.length !== 1 ? "s" : ""}</span>
       </div>
 
-      {seatError    && <ErrBanner msg={seatError} />}
-      {completeError && <ErrBanner msg={completeError} />}
-      {cancelError  && <ErrBanner msg={cancelError} />}
-
       <Card title="Table Reservations" icon="🪑" count={filtered.length}>
-        {loading ? (
-          <Spinner />
-        ) : error ? (
-          <div className="px-6 py-4"><ErrBanner msg={error} /></div>
-        ) : filtered.length === 0 ? (
-          <Empty msg="No reservations for the selected filters." />
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <THead cols={["Guest", "Table", "Date", "Time", "Party", "Status", "Actions"]} />
-              <tbody>
-                {filtered.map((r) => (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <THead cols={["Guest", "Table", "Date", "Time", "Party", "Status", "Actions"]} />
+            <tbody>
+              {loading
+                ? Array.from({ length: 5 }, (_, i) => <SkeletonRow key={i} cols={7} />)
+                : filtered.length === 0
+                ? (
+                  <tr>
+                    <td colSpan={7} className="py-8 text-center text-gray-400 text-sm">
+                      No reservations for the selected filters.
+                    </td>
+                  </tr>
+                )
+                : filtered.map((r) => (
                   <tr key={r._id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3">
                       <p className="font-medium text-[#0B1F2A]">{r.guest?.name || "—"}</p>
@@ -112,7 +133,7 @@ export default function ReceptionistTableReservations() {
                       <div className="flex gap-2 flex-wrap">
                         {r.status === "reserved" && (
                           <button
-                            onClick={() => dispatch(seatTableReservation(r._id))}
+                            onClick={() => handleSeat(r._id)}
                             disabled={seatLoading === r._id}
                             className="text-xs px-2.5 py-1.5 rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
                           >
@@ -121,7 +142,7 @@ export default function ReceptionistTableReservations() {
                         )}
                         {r.status === "seated" && (
                           <button
-                            onClick={() => dispatch(completeTableReservation(r._id))}
+                            onClick={() => handleComplete(r._id)}
                             disabled={completeLoading === r._id}
                             className="text-xs px-2.5 py-1.5 rounded-md bg-green-600 text-white hover:bg-green-700 disabled:opacity-60"
                           >
@@ -130,7 +151,7 @@ export default function ReceptionistTableReservations() {
                         )}
                         {(r.status === "reserved" || r.status === "seated") && (
                           <button
-                            onClick={() => dispatch(cancelTableReservation(r._id))}
+                            onClick={() => handleCancel(r._id)}
                             disabled={cancelLoading === r._id}
                             className="text-xs px-2.5 py-1.5 rounded-md border border-red-200 text-red-500 hover:bg-red-50 disabled:opacity-60"
                           >
@@ -141,10 +162,9 @@ export default function ReceptionistTableReservations() {
                     </td>
                   </tr>
                 ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+            </tbody>
+          </table>
+        </div>
       </Card>
     </ReceptionistLayout>
   );

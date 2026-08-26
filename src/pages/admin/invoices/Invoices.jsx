@@ -9,9 +9,12 @@ import {
 import { fetchBookings } from "../../../redux/slice/Booking/bookingSlice";
 import AdminLayout from "../../../components/admin/AdminLayout";
 import {
-  StatCard, TableCard, Th, Badge, Pills, Spinner, ErrorBanner, EmptyState, Modal,
+  StatCard, TableCard, Th, Badge, Pills, EmptyState, Modal,
   btn, input, label, money, fmtDate,
 } from "../../../components/admin/AdminUI";
+import Spinner from "../../../components/Spinner";
+import SkeletonRow from "../../../components/SkeletonRow";
+import { notifySuccess, notifyError } from "../../../utils/toast";
 
 const TABS = [
   { value: "all",     label: "All" },
@@ -31,9 +34,10 @@ export default function Invoices() {
   const [bookingId, setBookingId] = useState("");
   const [extras,    setExtras]    = useState([{ description: "", amount: "" }]);
 
-  useEffect(() => {
-    dispatch(fetchInvoices());
-  }, [dispatch]);
+  useEffect(() => { dispatch(fetchInvoices()); }, [dispatch]);
+  useEffect(() => { if (error) notifyError(error); }, [error]);
+  useEffect(() => { if (markPaidError) notifyError(markPaidError); }, [markPaidError]);
+  useEffect(() => { if (generateError) notifyError(generateError); }, [generateError]);
 
   useEffect(() => {
     if (genOpen) {
@@ -66,6 +70,7 @@ export default function Invoices() {
       .map((r) => ({ description: r.description.trim(), amount: Number(r.amount) }));
     dispatch(generateInvoice({ bookingId, extraCharges: cleaned })).then((r) => {
       if (!r.error) {
+        notifySuccess("Invoice generated successfully!");
         setGenOpen(false);
         setBookingId("");
         setExtras([{ description: "", amount: "" }]);
@@ -109,13 +114,7 @@ export default function Invoices() {
         </button>
       </div>
 
-      <ErrorBanner>{markPaidError}</ErrorBanner>
-
-      {loading && <Spinner />}
-      {!loading && error && <ErrorBanner onRetry={() => dispatch(fetchInvoices())}>{error}</ErrorBanner>}
-
-      {!loading && !error && (
-        <TableCard>
+      <TableCard>
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-100 text-left">
@@ -125,7 +124,9 @@ export default function Invoices() {
               </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 ? (
+              {loading
+                ? Array.from({ length: 5 }, (_, i) => <SkeletonRow key={i} cols={8} />)
+                : filtered.length === 0 ? (
                 <tr>
                   <td colSpan={8}>
                     <EmptyState
@@ -165,11 +166,11 @@ export default function Invoices() {
                         <button onClick={() => setDetail(inv)} className={btn.secondary}>View</button>
                         {inv.paymentStatus !== "paid" && (
                           <button
-                            onClick={() => dispatch(markInvoicePaid(inv._id))}
+                            onClick={() => dispatch(markInvoicePaid(inv._id)).then((r) => { if (!r.error) notifySuccess("Invoice marked as paid."); })}
                             disabled={markPaidLoading}
-                            className={btn.ghostGold}
+                            className={`${btn.ghostGold} inline-flex items-center gap-1.5`}
                           >
-                            Mark paid
+                            {markPaidLoading ? <><Spinner size="sm" color="#C9A24B" /> Marking…</> : "Mark paid"}
                           </button>
                         )}
                       </div>
@@ -179,8 +180,7 @@ export default function Invoices() {
               )}
             </tbody>
           </table>
-        </TableCard>
-      )}
+      </TableCard>
 
       {/* Invoice detail modal */}
       {detail && (
@@ -248,14 +248,12 @@ export default function Invoices() {
           footer={
             <>
               <button onClick={() => setGenOpen(false)} className={btn.secondary}>Cancel</button>
-              <button onClick={submitGenerate} disabled={!bookingId || generateLoading} className={btn.primary}>
-                {generateLoading ? "Generating…" : "Generate"}
+              <button onClick={submitGenerate} disabled={!bookingId || generateLoading} className={`${btn.primary} inline-flex items-center gap-1.5 justify-center`}>
+                {generateLoading ? <><Spinner size="sm" color="white" /> Generating…</> : "Generate"}
               </button>
             </>
           }
         >
-          <ErrorBanner>{generateError}</ErrorBanner>
-
           <div>
             <label className={label}>Booking</label>
             <select value={bookingId} onChange={(e) => setBookingId(e.target.value)} className={input}>

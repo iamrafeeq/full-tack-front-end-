@@ -3,6 +3,8 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { resetPassword, clearPasswordReset } from "../../redux/slice/auth/passwordResetSlice";
 import { required, strongPassword, runValidators } from "../../utils/validators";
+import { notifyError } from "../../utils/toast";
+import Spinner from "../../components/Spinner";
 
 function ResetPassword() {
   const { token } = useParams();
@@ -20,6 +22,8 @@ function ResetPassword() {
   useEffect(() => {
     dispatch(clearPasswordReset());
   }, [dispatch]);
+
+  useEffect(() => { if (resetError) notifyError(resetError); }, [resetError]);
 
   useEffect(() => {
     if (resetSuccess) {
@@ -131,15 +135,11 @@ function ResetPassword() {
               </div>
 
               {resetError && (
-                <div className="mb-8 pl-4 py-3 border-l-2 border-[#8B3A3A] bg-[#8B3A3A]/5 text-sm text-[#8B3A3A]">
-                  <p>{resetError}</p>
-                  <Link
-                    to="/forgot-password"
-                    className="mt-2 inline-block text-xs text-[#8B3A3A] underline hover:text-[#0B1F2A]"
-                  >
+                <p className="mb-4 text-xs text-center text-[#0B1F2A]/50">
+                  <Link to="/forgot-password" className="text-[#C9A24B] hover:underline">
                     Request a new reset link
                   </Link>
-                </div>
+                </p>
               )}
 
               <form onSubmit={handleSubmit} noValidate className="space-y-6">
@@ -205,9 +205,9 @@ function ResetPassword() {
                 <button
                   type="submit"
                   disabled={resetLoading}
-                  className="w-full bg-[#0B1F2A] text-[#FBF8F2] py-3.5 mt-2 text-[11px] tracking-[0.2em] uppercase border border-[#0B1F2A] hover:bg-[#0B1F2A]/90 hover:border-[#C9A24B] transition-colors disabled:opacity-50"
+                  className="w-full inline-flex items-center justify-center gap-2 bg-[#0B1F2A] text-[#FBF8F2] py-3.5 mt-2 text-[11px] tracking-[0.2em] uppercase border border-[#0B1F2A] hover:bg-[#0B1F2A]/90 hover:border-[#C9A24B] transition-colors disabled:opacity-50"
                 >
-                  {resetLoading ? "Updating..." : "Reset Password"}
+                  {resetLoading ? <><Spinner size="sm" color="white" /> Updating…</> : "Reset Password"}
                 </button>
               </form>
 

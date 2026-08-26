@@ -10,6 +10,7 @@ import {
   clearSingleBooking,
 } from "../../redux/slice/Booking/bookingSlice";
 import { fetchInvoices } from "../../redux/slice/invoice/invoiceSlice";
+import { notifySuccess, notifyError } from "../../utils/toast";
 import {
   fmt,
   fmtDate as fmtInvDate,
@@ -17,6 +18,7 @@ import {
   STATUS_COLORS,
   downloadInvoicePdf,
 } from "../../components/admin/invoices/invoiceHelpers";
+import SkeletonCard from "../../components/SkeletonCard";
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -60,6 +62,8 @@ export default function MyBookings() {
     singleBooking, singleLoading,
   } = useSelector((s) => s.bookings);
 
+  useEffect(() => { if (error) notifyError(error); }, [error]);
+
   const { invoices, loading: invLoading } = useSelector((s) => s.invoices);
 
   const [pdfLoading, setPdfLoading] = useState(null);
@@ -93,7 +97,12 @@ export default function MyBookings() {
   const handleCancel = () => {
     if (!confirmId) return;
     dispatch(cancelBooking(confirmId)).then((res) => {
-      if (!res.error) setConfirmId(null);
+      if (!res.error) {
+        notifySuccess("Booking cancelled successfully.");
+        setConfirmId(null);
+      } else {
+        notifyError(res.payload || "Failed to cancel booking. Please try again.");
+      }
     });
   };
 
@@ -143,21 +152,7 @@ export default function MyBookings() {
         {/* Loading skeletons */}
         {loading && (
           <div className="grid gap-4 sm:grid-cols-2">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 space-y-3 animate-pulse">
-                <div className="h-4 bg-gray-200 rounded w-1/2" />
-                <div className="h-3 bg-gray-100 rounded w-1/3" />
-                <div className="h-16 bg-gray-100 rounded" />
-                <div className="h-8 bg-gray-200 rounded" />
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Error */}
-        {!loading && error && (
-          <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">
-            {error}
+            {Array.from({length: 4}, (_, i) => <SkeletonCard key={i} />)}
           </div>
         )}
 

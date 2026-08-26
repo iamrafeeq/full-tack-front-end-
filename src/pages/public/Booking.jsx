@@ -10,6 +10,7 @@ import { fetchSettings } from "../../redux/slice/settings/settingsSlice";
 import { fetchRoomFeedback } from "../../redux/slice/feedback/feedbackSlice";
 import { useAuth } from "../../context/AuthContext";
 import StripeCheckoutForm from "../../components/payment/StripeCheckoutForm";
+import Spinner from "../../components/Spinner";
 
 // Initialise Stripe once at module level (outside component to avoid recreating the Promise)
 const stripePromise = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
@@ -468,12 +469,10 @@ function Booking() {
                   <button
                     type="submit"
                     disabled={createLoading || intentLoading || !token || nights < 1 || !form.room}
-                    className="w-full rounded-full bg-[#0B1F2A] py-3 font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:px-12"
+                    className="inline-flex items-center gap-1.5 justify-center w-full rounded-full bg-[#0B1F2A] py-3 font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:px-12"
                   >
-                    {createLoading
-                      ? "Confirming…"
-                      : intentLoading
-                      ? "Preparing payment…"
+                    {(createLoading || intentLoading)
+                      ? <><Spinner size="sm" color="white" /> {createLoading ? "Confirming…" : "Preparing payment…"}</>
                       : !token
                       ? "Log in to Book"
                       : form.paymentTiming === "now"

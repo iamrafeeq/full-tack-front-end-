@@ -7,6 +7,7 @@ import {
   createTableReservation,
   clearCreateError,
 } from "../../redux/slice/tableReservations/tableReservationSlice";
+import Spinner from "../../components/Spinner";
 
 const TIMES = [
   "07:00","07:30","08:00","08:30","09:00","09:30","10:00","10:30",
@@ -221,8 +222,8 @@ export default function TableReservation() {
                       <p className="mt-3 text-red-300 text-sm">{createError}</p>
                     )}
                     <button onClick={handleBook} disabled={createLoading}
-                      className="mt-5 w-full py-3 rounded-full bg-[#C9A24B] text-[#0B1F2A] font-bold text-sm hover:opacity-90 disabled:opacity-60 transition-opacity">
-                      {createLoading ? "Booking…" : "Confirm Reservation"}
+                      className="inline-flex items-center gap-1.5 justify-center mt-5 w-full py-3 rounded-full bg-[#C9A24B] text-[#0B1F2A] font-bold text-sm hover:opacity-90 disabled:opacity-60 transition-opacity">
+                      {createLoading ? <><Spinner size="sm" color="#0B1F2A" /> Booking…</> : "Confirm Reservation"}
                     </button>
                   </div>
                 )}

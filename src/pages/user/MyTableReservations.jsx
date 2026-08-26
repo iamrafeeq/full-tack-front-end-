@@ -7,6 +7,8 @@ import {
   cancelTableReservation,
   clearActionErrors,
 } from "../../redux/slice/tableReservations/tableReservationSlice";
+import { notifySuccess, notifyError } from "../../utils/toast";
+import SkeletonCard from "../../components/SkeletonCard";
 
 const STATUS_STYLES = {
   reserved:  "bg-blue-100 text-blue-700",
@@ -42,6 +44,9 @@ export default function MyTableReservations() {
   const { reservations, loading, error, cancelLoading, cancelError } =
     useSelector((s) => s.tableReservations);
 
+  useEffect(() => { if (error) notifyError(error); }, [error]);
+  useEffect(() => { if (cancelError) notifyError(cancelError); }, [cancelError]);
+
   const [confirmId, setConfirmId] = useState(null);
 
   useEffect(() => {
@@ -62,7 +67,10 @@ export default function MyTableReservations() {
   const handleCancel = () => {
     if (!confirmId) return;
     dispatch(cancelTableReservation(confirmId)).then((res) => {
-      if (!res.error) setConfirmId(null);
+      if (!res.error) {
+        notifySuccess("Table reservation cancelled.");
+        setConfirmId(null);
+      }
     });
   };
 
@@ -91,22 +99,8 @@ export default function MyTableReservations() {
 
         {loading && (
           <div className="grid gap-4 sm:grid-cols-2">
-            {[1, 2].map((i) => (
-              <div key={i} className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 space-y-3 animate-pulse">
-                <div className="h-4 bg-gray-200 rounded w-1/2" />
-                <div className="h-3 bg-gray-100 rounded w-1/3" />
-                <div className="h-16 bg-gray-100 rounded" />
-              </div>
-            ))}
+            {Array.from({length: 3}, (_, i) => <SkeletonCard key={i} />)}
           </div>
-        )}
-
-        {!loading && error && (
-          <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">{error}</div>
-        )}
-
-        {cancelError && (
-          <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">{cancelError}</div>
         )}
 
         {!loading && !error && (

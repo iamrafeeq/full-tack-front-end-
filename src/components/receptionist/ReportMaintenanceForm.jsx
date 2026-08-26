@@ -4,7 +4,8 @@ import {
   reportMaintenance,
   clearReportState,
 } from "../../redux/slice/maintenance/maintenanceSlice";
-import { Card, ErrBanner } from "./shared";
+import { Card } from "./shared";
+import { notifySuccess, notifyError } from "../../utils/toast";
 
 export default function ReportMaintenanceForm() {
   const dispatch = useDispatch();
@@ -19,13 +20,15 @@ export default function ReportMaintenanceForm() {
 
   useEffect(() => {
     if (reportSuccess) {
+      notifySuccess("Issue reported successfully. The room has been flagged for maintenance.");
       setRoom("");
       setIssue("");
       setShowForm(false);
-      const t = setTimeout(() => dispatch(clearReportState()), 4000);
-      return () => clearTimeout(t);
+      dispatch(clearReportState());
     }
   }, [reportSuccess, dispatch]);
+
+  useEffect(() => { if (reportError) notifyError(reportError); }, [reportError]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -52,19 +55,12 @@ export default function ReportMaintenanceForm() {
       }
     >
       <div className="px-6 py-4">
-        {reportSuccess && (
-          <div className="mb-4 px-4 py-2.5 bg-green-50 border border-green-200 rounded-md text-sm text-green-700">
-            Issue reported successfully. The room has been flagged for maintenance.
-          </div>
-        )}
-
         {!showForm ? (
           <p className="text-sm text-gray-400 text-center py-2">
             Click "+ Report Issue" to flag a room for maintenance.
           </p>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
-            {reportError && <ErrBanner msg={reportError} />}
 
             <div>
               <label className="block text-xs uppercase tracking-wide text-gray-500 mb-1.5 font-medium">

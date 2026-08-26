@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import HousekeepingLayout from "../../components/housekeeping/HousekeepingLayout";
+import SkeletonRow from "../../components/SkeletonRow";
 import {
   fetchCleaningRooms,
   markRoomClean,
@@ -52,11 +53,7 @@ export default function RoomsCleaning() {
 
         {/* Table card */}
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-          {loading ? (
-            <div className="flex justify-center py-16">
-              <div className="w-8 h-8 border-4 border-gray-200 border-t-[#C9A24B] rounded-full animate-spin" />
-            </div>
-          ) : error ? (
+          {error ? (
             <div className="m-5 rounded-lg bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-700">
               {error}
               <button
@@ -66,7 +63,7 @@ export default function RoomsCleaning() {
                 Retry
               </button>
             </div>
-          ) : cleaningRooms.length === 0 ? (
+          ) : !loading && cleaningRooms.length === 0 ? (
             <div className="py-20 flex flex-col items-center gap-3 text-center">
               <span className="text-4xl">✨</span>
               <p className="font-medium text-gray-700">All rooms are clean!</p>
@@ -88,7 +85,7 @@ export default function RoomsCleaning() {
                   </tr>
                 </thead>
                 <tbody>
-                  {cleaningRooms.map((room) => (
+                  {loading ? Array.from({length: 5}, (_, i) => <SkeletonRow key={i} cols={5} />) : cleaningRooms.map((room) => (
                     <tr
                       key={room._id}
                       className="border-b border-gray-50 hover:bg-gray-50/60 transition-colors"

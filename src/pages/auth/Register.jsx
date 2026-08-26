@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { AuthRegister } from "../../redux/slice/auth/registerAuthSlice";
+import { notifySuccess, notifyError } from "../../utils/toast";
+import Spinner from "../../components/Spinner";
 import {
   required,
   validName,
@@ -19,6 +21,8 @@ function Register() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { loading, error } = useSelector((state) => state.auth);
+
+  useEffect(() => { if (error) notifyError(error); }, [error]);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -100,6 +104,7 @@ function Register() {
     if (!validate()) return;
     try {
       await dispatch(AuthRegister(formData)).unwrap();
+      notifySuccess("Registration successful! Please sign in.");
       navigate("/login");
     } catch (err) {
       console.error("Register failed:", err);
@@ -137,12 +142,6 @@ function Register() {
         <h1 className="text-3xl font-serif text-[#0B1F2A]">Guest Registration</h1>
         <div className="w-10 h-px bg-[#C9A24B] mx-auto mt-4" />
       </div>
-
-      {error && (
-        <div className="mb-8 pl-4 py-3 border-l-2 border-[#8B3A3A] bg-[#8B3A3A]/5 text-sm text-[#8B3A3A]">
-          {error}
-        </div>
-      )}
 
       <form onSubmit={handleSubmit} noValidate className="space-y-10">
         {/* Section 01 — Guest Details */}
@@ -328,9 +327,9 @@ function Register() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-[#0B1F2A] text-[#FBF8F2] py-3.5 mt-2 text-[11px] tracking-[0.2em] uppercase border border-[#0B1F2A] hover:bg-[#0B1F2A]/90 hover:border-[#C9A24B] transition-colors disabled:opacity-50"
+          className="w-full inline-flex items-center justify-center gap-2 bg-[#0B1F2A] text-[#FBF8F2] py-3.5 mt-2 text-[11px] tracking-[0.2em] uppercase border border-[#0B1F2A] hover:bg-[#0B1F2A]/90 hover:border-[#C9A24B] transition-colors disabled:opacity-50"
         >
-          {loading ? "Registering..." : "Register"}
+          {loading ? <><Spinner size="sm" color="white" /> Registering…</> : "Register"}
         </button>
       </form>
 

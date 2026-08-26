@@ -1,13 +1,16 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { checkOutBooking } from "../../redux/slice/Booking/bookingSlice";
 import { fmt } from "../admin/invoices/invoiceHelpers";
-import { ErrBanner } from "./shared";
+import { notifySuccess, notifyError } from "../../utils/toast";
+import Spinner from "../Spinner";
 
 export default function CheckoutModal({ booking, onClose, onSuccess }) {
   const dispatch = useDispatch();
   const { checkOutLoading, checkOutError } = useSelector((s) => s.bookings);
   const [coExtras, setCoExtras] = useState([{ description: "", amount: "" }]);
+
+  useEffect(() => { if (checkOutError) notifyError(checkOutError); }, [checkOutError]);
 
   const addRow    = () => setCoExtras((p) => [...p, { description: "", amount: "" }]);
   const removeRow = (i) => setCoExtras((p) => p.filter((_, idx) => idx !== i));
@@ -22,6 +25,7 @@ export default function CheckoutModal({ booking, onClose, onSuccess }) {
       const result = await dispatch(
         checkOutBooking({ id: booking._id, extraCharges: validExtras })
       ).unwrap();
+      notifySuccess("Check-out completed successfully.");
       onClose();
       onSuccess(result.invoice);
     } catch (_) {}
@@ -55,8 +59,6 @@ export default function CheckoutModal({ booking, onClose, onSuccess }) {
               Payment required before checkout. Use <strong>Collect Pay</strong> first, then check out.
             </div>
           )}
-          {checkOutError && <ErrBanner msg={checkOutError} />}
-
           {/* Room charge */}
           <div className="bg-gray-50 rounded-lg px-4 py-3 flex justify-between text-sm">
             <span className="text-gray-500">
@@ -119,9 +121,9 @@ export default function CheckoutModal({ booking, onClose, onSuccess }) {
           <button
             onClick={handleSubmit}
             disabled={checkOutLoading || paymentBlocked}
-            className="flex-1 bg-blue-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-60"
+            className="flex-1 inline-flex items-center gap-1.5 justify-center bg-blue-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-60"
           >
-            {checkOutLoading ? "Processing…" : "Complete Check-Out"}
+            {checkOutLoading ? <><Spinner size="sm" color="white" /> Complete Check-Out</> : "Complete Check-Out"}
           </button>
         </div>
       </div>

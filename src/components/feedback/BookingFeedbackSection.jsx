@@ -6,6 +6,8 @@ import {
   clearSubmitError,
 } from "../../redux/slice/feedback/feedbackSlice";
 import StarRating from "./StarRating";
+import Spinner from "../Spinner";
+import { notifySuccess, notifyError } from "../../utils/toast";
 
 export default function BookingFeedbackSection({ bookingId }) {
   const dispatch = useDispatch();
@@ -24,6 +26,8 @@ export default function BookingFeedbackSection({ bookingId }) {
     if (notFetched) dispatch(fetchBookingFeedback(bookingId));
   }, [dispatch, bookingId, notFetched]);
 
+  useEffect(() => { if (submitError) notifyError(submitError); }, [submitError]);
+
   const openForm = () => {
     dispatch(clearSubmitError());
     setFormOpen(true);
@@ -40,7 +44,10 @@ export default function BookingFeedbackSection({ bookingId }) {
     e.preventDefault();
     if (!rating) return;
     const res = await dispatch(submitFeedback({ booking: bookingId, rating, comment }));
-    if (!res.error) closeForm();
+    if (!res.error) {
+      notifySuccess("Feedback submitted!");
+      closeForm();
+    }
   };
 
   // Loading
@@ -99,10 +106,6 @@ export default function BookingFeedbackSection({ bookingId }) {
         className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:border-[#C9A24B] transition-colors"
       />
 
-      {submitError && (
-        <p className="text-xs text-red-500">{submitError}</p>
-      )}
-
       <div className="flex gap-2">
         <button
           type="button"
@@ -114,9 +117,9 @@ export default function BookingFeedbackSection({ bookingId }) {
         <button
           type="submit"
           disabled={!rating || submitLoading}
-          className="flex-1 text-sm bg-[#0B1F2A] text-white rounded-lg py-2 hover:opacity-90 transition-opacity disabled:opacity-50 font-medium"
+          className="inline-flex items-center gap-1.5 justify-center flex-1 text-sm bg-[#0B1F2A] text-white rounded-lg py-2 hover:opacity-90 transition-opacity disabled:opacity-50 font-medium"
         >
-          {submitLoading ? "Submitting…" : "Submit"}
+          {submitLoading ? <><Spinner size="sm" color="white" /> Submitting…</> : "Submit"}
         </button>
       </div>
     </form>

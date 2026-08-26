@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useStripe, useElements, PaymentElement } from "@stripe/react-stripe-js";
 import { useDispatch } from "react-redux";
 import { confirmStripePayment } from "../../redux/slice/payments/paymentsSlice";
+import { notifyError, notifyInfo } from "../../utils/toast";
 
 export default function StripeCheckoutForm({ bookingId, total, onSuccess, onCancel }) {
   const stripe   = useStripe();
@@ -9,16 +10,13 @@ export default function StripeCheckoutForm({ bookingId, total, onSuccess, onCanc
   const dispatch = useDispatch();
 
   const [loading, setLoading] = useState(false);
-  const [error,   setError]   = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!stripe || !elements) return;
 
     setLoading(true);
-    setError(null);
 
-    // 1. Confirm payment with Stripe
     const { error: stripeError, paymentIntent } = await stripe.confirmPayment({
       elements,
       confirmParams: { return_url: window.location.href },
@@ -26,13 +24,12 @@ export default function StripeCheckoutForm({ bookingId, total, onSuccess, onCanc
     });
 
     if (stripeError) {
-      setError(stripeError.message);
+      notifyError(stripeError.message);
       setLoading(false);
       return;
     }
 
     if (paymentIntent?.status === "succeeded") {
-      // 2. Notify the backend to mark the booking paid
       const res = await dispatch(
         confirmStripePayment({
           bookingId,
@@ -42,11 +39,7 @@ export default function StripeCheckoutForm({ bookingId, total, onSuccess, onCanc
       );
 
       if (res.error) {
-        // Payment went through on Stripe side; backend will catch it via webhook.
-        // Still treat it as success for the user.
-        setError(
-          "Payment received! Your booking will be updated shortly (webhook will confirm)."
-        );
+        notifyInfo("Payment received! Your booking will be updated shortly.");
         setTimeout(onSuccess, 2500);
         return;
       }
@@ -55,8 +48,7 @@ export default function StripeCheckoutForm({ bookingId, total, onSuccess, onCanc
       return;
     }
 
-    // Unexpected status
-    setError("Payment was not completed. Please try again.");
+    notifyError("Payment was not completed. Please try again.");
     setLoading(false);
   };
 
@@ -83,12 +75,6 @@ export default function StripeCheckoutForm({ bookingId, total, onSuccess, onCanc
         <div className="rounded-xl border border-gray-200 bg-white p-4">
           <PaymentElement options={{ layout: "tabs" }} />
         </div>
-
-        {error && (
-          <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600 border border-red-200">
-            {error}
-          </p>
-        )}
 
         {/* Test card helper */}
         <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-xs text-blue-700 space-y-0.5">

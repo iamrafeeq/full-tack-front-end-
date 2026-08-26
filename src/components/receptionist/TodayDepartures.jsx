@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchTodayActivity } from "../../redux/slice/receptionist/receptionistSlice";
-import { Card, THead, GuestCell, RoomCell, PayBadge, Spinner, Empty, fmtDate } from "./shared";
+import { Card, THead, GuestCell, RoomCell, PayBadge, Empty, fmtDate } from "./shared";
 import CheckoutModal from "./CheckoutModal";
 import InvoiceConfirmModal from "./InvoiceConfirmModal";
 import CollectPaymentModal from "./CollectPaymentModal";
+import SkeletonRow from "../SkeletonRow";
 
 export default function TodayDepartures() {
   const dispatch = useDispatch();
@@ -26,16 +27,21 @@ export default function TodayDepartures() {
   return (
     <>
       <Card title="Today's Departures" icon="🛫" count={departures.length}>
-        {todayLoading ? (
-          <Spinner />
-        ) : departures.length === 0 ? (
-          <Empty msg="No departures expected today." />
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <THead cols={["Guest", "Room", "Check-Out", "Payment", "Actions"]} />
-              <tbody>
-                {departures.map((b) => (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <THead cols={["Guest", "Room", "Check-Out", "Payment", "Actions"]} />
+            <tbody>
+              {todayLoading
+                ? Array.from({ length: 5 }, (_, i) => <SkeletonRow key={i} cols={5} />)
+                : departures.length === 0
+                ? (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-gray-400 text-sm">
+                      No departures expected today.
+                    </td>
+                  </tr>
+                )
+                : departures.map((b) => (
                   <tr key={b._id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
                     <GuestCell guest={b.guest} />
                     <RoomCell room={b.room} />
@@ -68,10 +74,9 @@ export default function TodayDepartures() {
                     </td>
                   </tr>
                 ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+            </tbody>
+          </table>
+        </div>
       </Card>
 
       {checkoutBooking && (

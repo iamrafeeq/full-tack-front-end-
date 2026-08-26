@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import HousekeepingLayout from "../../components/housekeeping/HousekeepingLayout";
+import SkeletonRow from "../../components/SkeletonRow";
 import {
   fetchCleaningTables,
   markTableClean,
@@ -41,16 +42,12 @@ export default function TablesCleaning() {
         )}
 
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-          {tablesLoading ? (
-            <div className="flex justify-center py-16">
-              <div className="w-8 h-8 border-4 border-gray-200 border-t-[#C9A24B] rounded-full animate-spin" />
-            </div>
-          ) : tablesError ? (
+          {tablesError ? (
             <div className="m-5 rounded-lg bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-700">
               {tablesError}
               <button onClick={() => dispatch(fetchCleaningTables())} className="ml-3 underline text-red-600 text-xs">Retry</button>
             </div>
-          ) : cleaningTables.length === 0 ? (
+          ) : !tablesLoading && cleaningTables.length === 0 ? (
             <div className="py-20 flex flex-col items-center gap-3 text-center">
               <span className="text-4xl">✨</span>
               <p className="font-medium text-gray-700">All tables are clean!</p>
@@ -69,7 +66,7 @@ export default function TablesCleaning() {
                   </tr>
                 </thead>
                 <tbody>
-                  {cleaningTables.map((table) => (
+                  {tablesLoading ? Array.from({length: 5}, (_, i) => <SkeletonRow key={i} cols={4} />) : cleaningTables.map((table) => (
                     <tr key={table._id} className="border-b border-gray-50 hover:bg-gray-50/60 transition-colors">
                       <td className="px-5 py-3.5 font-semibold text-[#0B1F2A]">{table.tableNumber}</td>
                       <td className="px-5 py-3.5 text-gray-600">{table.capacity} seats</td>

@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { forgotPassword, clearPasswordReset } from "../../redux/slice/auth/passwordResetSlice";
 import { required, validEmail, runValidators } from "../../utils/validators";
+import { notifyError } from "../../utils/toast";
+import Spinner from "../../components/Spinner";
 
 function ForgotPassword() {
   const dispatch = useDispatch();
@@ -17,6 +19,8 @@ function ForgotPassword() {
   useEffect(() => {
     dispatch(clearPasswordReset());
   }, [dispatch]);
+
+  useEffect(() => { if (forgotError) notifyError(forgotError); }, [forgotError]);
 
   const validate = (val) => runValidators(val, [required, validEmail]);
 
@@ -101,12 +105,6 @@ function ForgotPassword() {
                 </p>
               </div>
 
-              {forgotError && (
-                <div className="mb-8 pl-4 py-3 border-l-2 border-[#8B3A3A] bg-[#8B3A3A]/5 text-sm text-[#8B3A3A]">
-                  {forgotError}
-                </div>
-              )}
-
               <form onSubmit={handleSubmit} noValidate className="space-y-6">
                 <div>
                   <label className="block text-[11px] tracking-[0.1em] uppercase text-[#0B1F2A]/60 mb-1.5">
@@ -128,9 +126,9 @@ function ForgotPassword() {
                 <button
                   type="submit"
                   disabled={forgotLoading}
-                  className="w-full bg-[#0B1F2A] text-[#FBF8F2] py-3.5 mt-2 text-[11px] tracking-[0.2em] uppercase border border-[#0B1F2A] hover:bg-[#0B1F2A]/90 hover:border-[#C9A24B] transition-colors disabled:opacity-50"
+                  className="w-full inline-flex items-center justify-center gap-2 bg-[#0B1F2A] text-[#FBF8F2] py-3.5 mt-2 text-[11px] tracking-[0.2em] uppercase border border-[#0B1F2A] hover:bg-[#0B1F2A]/90 hover:border-[#C9A24B] transition-colors disabled:opacity-50"
                 >
-                  {forgotLoading ? "Sending..." : "Send Reset Link"}
+                  {forgotLoading ? <><Spinner size="sm" color="white" /> Sending…</> : "Send Reset Link"}
                 </button>
               </form>
 

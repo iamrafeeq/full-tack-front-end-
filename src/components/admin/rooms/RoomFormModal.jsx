@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { createRoom, updateRoom, clearFormErrors } from "../../../redux/slice/roomSlice/roomSlice";
 import { apiBase } from "../../../api/axios";
+import { notifySuccess, notifyError } from "../../../utils/toast";
+import Spinner from "../../Spinner";
 
 const ROOM_TYPES = ["single", "double", "deluxe", "suite"];
 const BED_TYPES  = ["single", "twin", "queen", "king"];
@@ -87,6 +89,7 @@ export default function RoomFormModal({ editRoom, onClose, onSuccess }) {
   const fileInputRef = useRef(null);
 
   useEffect(() => { dispatch(clearFormErrors()); }, [dispatch]);
+  useEffect(() => { if (apiError) notifyError(apiError); }, [apiError]);
 
   // Revoke object URLs when previews change or component unmounts
   useEffect(() => () => previews.forEach(URL.revokeObjectURL), [previews]);
@@ -164,7 +167,11 @@ export default function RoomFormModal({ editRoom, onClose, onSuccess }) {
       : createRoom(fd);
 
     dispatch(action).then((result) => {
-      if (!result.error) { onSuccess?.(); onClose(); }
+      if (!result.error) {
+        notifySuccess(isEditing ? "Room updated successfully." : "Room created successfully.");
+        onSuccess?.();
+        onClose();
+      }
     });
   };
 
@@ -190,13 +197,6 @@ export default function RoomFormModal({ editRoom, onClose, onSuccess }) {
 
         {/* Body */}
         <form onSubmit={handleSubmit} className="overflow-y-auto flex-1 px-6 py-5 space-y-5">
-
-          {/* API error banner */}
-          {apiError && (
-            <div className="px-4 py-2.5 bg-red-50 border border-red-200 rounded-md text-sm text-red-600">
-              {apiError}
-            </div>
-          )}
 
           {/* Row 1: Room Number + Type */}
           <div className="grid grid-cols-2 gap-4">
@@ -380,8 +380,8 @@ export default function RoomFormModal({ editRoom, onClose, onSuccess }) {
             Cancel
           </button>
           <button onClick={handleSubmit} disabled={loading}
-            className="bg-[#0B1F2A] text-white text-sm px-5 py-2 rounded-md hover:opacity-90 disabled:opacity-60">
-            {loading ? "Saving..." : isEditing ? "Save Changes" : "Add Room"}
+            className="inline-flex items-center gap-1.5 justify-center bg-[#0B1F2A] text-white text-sm px-5 py-2 rounded-md hover:opacity-90 disabled:opacity-60">
+            {loading ? <><Spinner size="sm" color="white" /> {isEditing ? "Save Changes" : "Add Room"}</> : isEditing ? "Save Changes" : "Add Room"}
           </button>
         </div>
       </div>

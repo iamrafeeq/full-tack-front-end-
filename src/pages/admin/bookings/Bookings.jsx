@@ -10,9 +10,12 @@ import {
   payBooking,
 } from "../../../redux/slice/Booking/bookingSlice";
 import AdminLayout from "../../../components/admin/AdminLayout";
+import { notifySuccess, notifyError } from "../../../utils/toast";
 import { fmt, fmtMethod, downloadInvoicePdf } from "../../../components/admin/invoices/invoiceHelpers";
 import { fetchPaymentByBooking, clearBookingPayment } from "../../../redux/slice/payments/paymentsSlice";
 import { deleteBooking, clearDeleteError } from "../../../redux/slice/Booking/completeBooking/deleteBookingSlice";
+import Spinner from "../../../components/Spinner";
+import SkeletonRow from "../../../components/SkeletonRow";
 
 // Status badge styles
 const STATUS_STYLES = {
@@ -61,9 +64,14 @@ export default function AdminBookings() {
   const [pdfLoading,      setPdfLoading]      = useState(false);
   const [deleteConfirm,   setDeleteConfirm]   = useState(false);
 
-  useEffect(() => {
-    dispatch(fetchBookings());
-  }, [dispatch]);
+  useEffect(() => { dispatch(fetchBookings()); }, [dispatch]);
+
+  useEffect(() => { if (checkInError) notifyError(checkInError); }, [checkInError]);
+  useEffect(() => { if (checkOutError) notifyError(checkOutError); }, [checkOutError]);
+  useEffect(() => { if (cancelError) notifyError(cancelError); }, [cancelError]);
+  useEffect(() => { if (payError) notifyError(payError); }, [payError]);
+  useEffect(() => { if (deleteError) notifyError(deleteError); }, [deleteError]);
+  useEffect(() => { if (error) notifyError(error); }, [error]);
 
   // ── Client-side filtering ───────────────────────────────────────────────────
   const filtered = bookings.filter((b) => {
@@ -102,11 +110,10 @@ export default function AdminBookings() {
         extraCharges: validExtras,
       })).unwrap();
       const savedBooking = coModal.booking;
+      notifySuccess("Check-out completed successfully.");
       closeCheckOutModal();
       setInvoiceConfirm({ open: true, invoice: result.invoice, booking: savedBooking });
-    } catch (_) {
-      // error shown via checkOutError banner in modal
-    }
+    } catch (_) {}
   };
 
   const handlePdfDownload = async (invoiceId) => {
@@ -117,7 +124,11 @@ export default function AdminBookings() {
   const handleCancel = () => {
     if (!confirmId) return;
     dispatch(cancelBooking(confirmId)).then((res) => {
-      if (!res.error) { setConfirmId(null); setConfirmStatus(null); }
+      if (!res.error) {
+        notifySuccess("Booking cancelled.");
+        setConfirmId(null);
+        setConfirmStatus(null);
+      }
     });
   };
 
@@ -143,6 +154,7 @@ export default function AdminBookings() {
     if (!singleBooking) return;
     const result = await dispatch(deleteBooking(singleBooking._id));
     if (!result.error) {
+      notifySuccess("Booking deleted.");
       closeDetail();
       dispatch(fetchBookings());
     }
@@ -151,11 +163,12 @@ export default function AdminBookings() {
   const handleCollectPay = () => {
     if (!payModal.bookingId) return;
     dispatch(payBooking({ bookingId: payModal.bookingId, paymentMethod: payMethod })).then((res) => {
-      if (!res.error) setPayModal({ open: false, bookingId: null });
+      if (!res.error) {
+        notifySuccess("Payment recorded successfully.");
+        setPayModal({ open: false, bookingId: null });
+      }
     });
   };
-
-  const anyActionError = checkInError || checkOutError || cancelError || payError;
 
   return (
     <AdminLayout>
@@ -192,30 +205,8 @@ export default function AdminBookings() {
         </span>
       </div>
 
-      {/* ── Error banners ───────────────────────────────────────────────────── */}
-      {anyActionError && (
-        <div className="mb-4 px-4 py-2.5 bg-red-50 border border-red-200 rounded-md text-sm text-red-600">
-          {anyActionError}
-        </div>
-      )}
-
-      {/* ── Loading ─────────────────────────────────────────────────────────── */}
-      {loading && (
-        <div className="flex justify-center py-20">
-          <div className="w-8 h-8 border-4 border-[#C9A24B] border-t-transparent rounded-full animate-spin" />
-        </div>
-      )}
-
-      {/* ── Fetch error ─────────────────────────────────────────────────────── */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-md">
-          {error}
-        </div>
-      )}
-
       {/* ── Table ───────────────────────────────────────────────────────────── */}
-      {!loading && !error && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-x-auto">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 text-left">
@@ -227,7 +218,9 @@ export default function AdminBookings() {
               </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 ? (
+              {loading
+                ? Array.from({ length: 5 }, (_, i) => <SkeletonRow key={i} cols={10} />)
+                : filtered.length === 0 ? (
                 <tr>
                   <td colSpan={10} className="text-center py-12 text-gray-400">
                     No bookings found.
@@ -315,9 +308,9 @@ export default function AdminBookings() {
                           <button
                             onClick={() => handleCheckIn(booking._id)}
                             disabled={checkInLoading}
-                            className="text-xs px-2.5 py-1.5 rounded-md bg-green-600 text-white hover:bg-green-700 disabled:opacity-60"
+                            className="text-xs px-2.5 py-1.5 rounded-md bg-green-600 text-white hover:bg-green-700 disabled:opacity-60 inline-flex items-center gap-1.5"
                           >
-                            Check In
+                            {checkInLoading ? <Spinner size="sm" color="white" /> : "Check In"}
                           </button>
                         )}
 
@@ -347,8 +340,7 @@ export default function AdminBookings() {
               )}
             </tbody>
           </table>
-        </div>
-      )}
+      </div>
 
       {/* ── Cancel confirmation dialog ────────────────────────────────────── */}
       {confirmId && (
@@ -390,9 +382,9 @@ export default function AdminBookings() {
               <button
                 onClick={handleCancel}
                 disabled={cancelLoading}
-                className="bg-red-600 text-white text-sm px-4 py-2 rounded-md hover:bg-red-700 disabled:opacity-60"
+                className="bg-red-600 text-white text-sm px-4 py-2 rounded-md hover:bg-red-700 disabled:opacity-60 inline-flex items-center gap-1.5 justify-center"
               >
-                {cancelLoading ? "Cancelling…" : "Yes, Cancel"}
+                {cancelLoading ? <><Spinner size="sm" color="white" /> Cancelling…</> : "Yes, Cancel"}
               </button>
             </div>
           </div>
@@ -498,9 +490,6 @@ export default function AdminBookings() {
             {/* Delete footer — only for completed bookings */}
             {singleBooking && (singleBooking.status === "checked-out" || singleBooking.status === "cancelled") && (
               <div className="px-6 py-4 border-t border-gray-100">
-                {deleteError && (
-                  <p className="text-xs text-red-500 mb-2 text-center">{deleteError}</p>
-                )}
                 {!deleteConfirm ? (
                   <button
                     onClick={() => setDeleteConfirm(true)}
@@ -523,9 +512,9 @@ export default function AdminBookings() {
                       <button
                         onClick={handleDeleteBooking}
                         disabled={deleteLoading}
-                        className="flex-1 py-2 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 disabled:opacity-60 transition-colors"
+                        className="flex-1 py-2 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 disabled:opacity-60 transition-colors inline-flex items-center gap-1.5 justify-center"
                       >
-                        {deleteLoading ? "Deleting…" : "Yes, Delete"}
+                        {deleteLoading ? <><Spinner size="sm" color="white" /> Deleting…</> : "Yes, Delete"}
                       </button>
                     </div>
                   </div>
@@ -562,13 +551,6 @@ export default function AdminBookings() {
                 {paymentBlocked && (
                   <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                     Payment is required before checkout. Use <strong>Collect Payment</strong> first, then check out.
-                  </div>
-                )}
-
-                {/* Error banner */}
-                {checkOutError && (
-                  <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-                    {checkOutError}
                   </div>
                 )}
 
@@ -634,9 +616,9 @@ export default function AdminBookings() {
                 <button
                   onClick={handleCheckOutSubmit}
                   disabled={checkOutLoading || paymentBlocked}
-                  className="flex-1 bg-blue-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-60"
+                  className="flex-1 bg-blue-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-60 inline-flex items-center gap-1.5 justify-center"
                 >
-                  {checkOutLoading ? "Processing…" : "Complete Check-Out"}
+                  {checkOutLoading ? <><Spinner size="sm" color="white" /> Processing…</> : "Complete Check-Out"}
                 </button>
               </div>
             </div>
@@ -700,9 +682,9 @@ export default function AdminBookings() {
               <button
                 onClick={() => handlePdfDownload(invoiceConfirm.invoice._id)}
                 disabled={pdfLoading}
-                className="flex-1 bg-[#0B1F2A] text-white text-sm py-2 rounded-lg hover:opacity-90 disabled:opacity-60"
+                className="flex-1 bg-[#0B1F2A] text-white text-sm py-2 rounded-lg hover:opacity-90 disabled:opacity-60 inline-flex items-center gap-1.5 justify-center"
               >
-                {pdfLoading ? "Downloading…" : "Download PDF"}
+                {pdfLoading ? <><Spinner size="sm" color="white" /> Downloading…</> : "Download PDF"}
               </button>
             </div>
           </div>
@@ -719,10 +701,6 @@ export default function AdminBookings() {
           <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-sm z-10 p-6">
             <h3 className="text-lg font-serif text-[#0B1F2A] mb-1">Collect Payment</h3>
             <p className="text-sm text-gray-400 mb-5">Select payment method received from the guest.</p>
-
-            {payError && (
-              <p className="mb-4 text-sm text-red-600 bg-red-50 px-3 py-2 rounded">{payError}</p>
-            )}
 
             <div className="space-y-2 mb-6">
               {[
@@ -764,9 +742,9 @@ export default function AdminBookings() {
               <button
                 onClick={handleCollectPay}
                 disabled={payLoading}
-                className="flex-1 bg-[#0B1F2A] text-white text-sm px-4 py-2 rounded-md hover:opacity-90 disabled:opacity-60"
+                className="flex-1 bg-[#0B1F2A] text-white text-sm px-4 py-2 rounded-md hover:opacity-90 disabled:opacity-60 inline-flex items-center gap-1.5 justify-center"
               >
-                {payLoading ? "Recording…" : "Confirm Payment"}
+                {payLoading ? <><Spinner size="sm" color="white" /> Recording…</> : "Confirm Payment"}
               </button>
             </div>
           </div>

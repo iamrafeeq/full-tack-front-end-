@@ -1,11 +1,13 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   searchGuests,
   clearGuestResults,
 } from "../../redux/slice/receptionist/receptionistSlice";
 import { createBooking, clearBookingError } from "../../redux/slice/Booking/bookingSlice";
-import { Card, ErrBanner, PAYMENT_METHODS } from "./shared";
+import { Card, PAYMENT_METHODS } from "./shared";
+import { notifySuccess, notifyError } from "../../utils/toast";
+import Spinner from "../Spinner";
 
 export default function CreateBookingForm() {
   const dispatch = useDispatch();
@@ -17,10 +19,11 @@ export default function CreateBookingForm() {
   const [guestQuery,     setGuestQuery]     = useState("");
   const [selectedGuest,  setSelectedGuest]  = useState(null);
   const [showGuestDrop,  setShowGuestDrop]  = useState(false);
-  const [bookingSuccess, setBookingSuccess] = useState(false);
   const [form, setForm] = useState({
     room: "", checkInDate: "", checkOutDate: "", paymentTiming: "checkin", paymentMethod: "cash",
   });
+
+  useEffect(() => { if (createError) notifyError(createError); }, [createError]);
 
   const debounceRef = useRef(null);
   const today = new Date().toISOString().split("T")[0];
@@ -67,18 +70,16 @@ export default function CreateBookingForm() {
     };
     const res = await dispatch(createBooking(payload));
     if (!res.error) {
-      setBookingSuccess(true);
+      notifySuccess("Booking created successfully!");
       setShowForm(false);
       setForm({ room: "", checkInDate: "", checkOutDate: "", paymentTiming: "checkin", paymentMethod: "cash" });
       setSelectedGuest(null);
       setGuestQuery("");
-      setTimeout(() => setBookingSuccess(false), 4000);
     }
   };
 
   const openForm = () => {
     setShowForm(true);
-    setBookingSuccess(false);
     dispatch(clearBookingError());
   };
 
@@ -96,19 +97,12 @@ export default function CreateBookingForm() {
       }
     >
       <div className="px-6 py-4">
-        {bookingSuccess && (
-          <div className="mb-4 px-4 py-2.5 bg-green-50 border border-green-200 rounded-md text-sm text-green-700">
-            Booking created successfully!
-          </div>
-        )}
-
         {!showForm ? (
           <p className="text-sm text-gray-400 text-center py-2">
             Click "+ New Booking" to create a reservation on behalf of a guest.
           </p>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-5">
-            {createError && <ErrBanner msg={createError} />}
 
             {/* Guest search */}
             <div className="relative">
@@ -277,9 +271,9 @@ export default function CreateBookingForm() {
               <button
                 type="submit"
                 disabled={createLoading || !selectedGuest}
-                className="bg-[#C9A24B] text-[#0B1F2A] text-sm font-semibold px-5 py-2 rounded-lg hover:opacity-90 disabled:opacity-60"
+                className="inline-flex items-center gap-1.5 justify-center bg-[#C9A24B] text-[#0B1F2A] text-sm font-semibold px-5 py-2 rounded-lg hover:opacity-90 disabled:opacity-60"
               >
-                {createLoading ? "Creating…" : "Create Booking"}
+                {createLoading ? <><Spinner size="sm" color="#0B1F2A" /> Create Booking</> : "Create Booking"}
               </button>
             </div>
           </form>

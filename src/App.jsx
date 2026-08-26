@@ -1,4 +1,6 @@
 import { useLocation } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import Navbar from "./components/layout/Navbar";
 import AppRoutes from "./routes/AppRoutes";
 
@@ -14,6 +16,16 @@ function App() {
     <div>
       {!isStaffRoute && <Navbar />}
       <AppRoutes />
+      <ToastContainer
+        position="top-right"
+        autoClose={3500}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        pauseOnHover
+        theme="light"
+        toastStyle={{ fontFamily: "inherit" }}
+      />
     </div>
   );
 }

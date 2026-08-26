@@ -6,6 +6,7 @@ import {
   clearReportState,
 } from "../../redux/slice/maintenance/maintenanceSlice";
 import { fetchPublicRooms } from "../../redux/slice/roomSlice/roomSlice";
+import { notifySuccess, notifyError } from "../../utils/toast";
 
 const PRIORITY_OPTIONS = [
   { value: "low",    label: "Low",    desc: "Non-urgent, can wait",          color: "text-gray-600" },
@@ -26,11 +27,15 @@ export default function ReportIssue() {
 
   useEffect(() => {
     if (reportSuccess) {
+      notifySuccess("Issue reported successfully. The room has been flagged for maintenance.");
       setForm({ room: "", issue: "", priority: "medium" });
-      const t = setTimeout(() => dispatch(clearReportState()), 4000);
-      return () => clearTimeout(t);
+      dispatch(clearReportState());
     }
   }, [reportSuccess, dispatch]);
+
+  useEffect(() => {
+    if (reportError) notifyError(reportError);
+  }, [reportError]);
 
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
 
@@ -50,25 +55,6 @@ export default function ReportIssue() {
             The maintenance team will be notified as soon as you submit.
           </p>
         </div>
-
-        {/* Success banner */}
-        {reportSuccess && (
-          <div className="mb-5 flex items-start gap-3 rounded-xl bg-green-50 border border-green-200 px-5 py-4">
-            <span className="text-green-500 text-lg shrink-0 mt-0.5">✓</span>
-            <div>
-              <p className="font-medium text-green-800 text-sm">Issue reported successfully</p>
-              <p className="text-xs text-green-600 mt-0.5">The room has been flagged. The team has been notified.</p>
-            </div>
-          </div>
-        )}
-
-        {/* Error banner */}
-        {reportError && (
-          <div className="mb-5 flex items-start gap-3 rounded-xl bg-red-50 border border-red-200 px-5 py-4">
-            <span className="text-red-500 text-lg shrink-0 mt-0.5">✕</span>
-            <p className="text-sm text-red-700">{reportError}</p>
-          </div>
-        )}
 
         {/* Form card */}
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-8">

@@ -9,8 +9,11 @@ import {
 } from "../../../redux/slice/tableReservations/tableReservationSlice";
 import AdminLayout from "../../../components/admin/AdminLayout";
 import {
-  StatCard, TableCard, Th, Badge, Spinner, ErrorBanner, EmptyState, Modal, btn, fmtDate,
+  StatCard, TableCard, Th, Badge, EmptyState, Modal, btn, fmtDate,
 } from "../../../components/admin/AdminUI";
+import Spinner from "../../../components/Spinner";
+import SkeletonRow from "../../../components/SkeletonRow";
+import { notifySuccess, notifyError } from "../../../utils/toast";
 
 const STATUS_OPTIONS = ["reserved", "seated", "completed", "cancelled"];
 
@@ -48,6 +51,11 @@ export default function AdminTableReservations() {
 
   useEffect(() => () => dispatch(clearActionErrors()), [dispatch]);
 
+  useEffect(() => { if (seatError) notifyError(seatError); }, [seatError]);
+  useEffect(() => { if (completeError) notifyError(completeError); }, [completeError]);
+  useEffect(() => { if (cancelError) notifyError(cancelError); }, [cancelError]);
+  useEffect(() => { if (error) notifyError(error); }, [error]);
+
   const filtered = reservations.filter((r) => {
     if (!search) return true;
     const q = search.toLowerCase();
@@ -68,9 +76,22 @@ export default function AdminTableReservations() {
   const handleCancel = () => {
     if (!confirmCancel) return;
     dispatch(cancelTableReservation(confirmCancel._id)).then((res) => {
-      if (!res.error) setConfirmCancel(null);
+      if (!res.error) {
+        notifySuccess("Reservation cancelled.");
+        setConfirmCancel(null);
+      }
     });
   };
+
+  const handleSeat = (id) =>
+    dispatch(seatTableReservation(id)).then((res) => {
+      if (!res.error) notifySuccess("Guest seated.");
+    });
+
+  const handleComplete = (id) =>
+    dispatch(completeTableReservation(id)).then((res) => {
+      if (!res.error) notifySuccess("Reservation completed.");
+    });
 
   const todayStr = new Date().toISOString().split("T")[0];
 
@@ -109,17 +130,7 @@ export default function AdminTableReservations() {
         <span className="text-sm text-gray-400 whitespace-nowrap ml-auto">{filtered.length} reservations</span>
       </div>
 
-      <ErrorBanner>{seatError}</ErrorBanner>
-      <ErrorBanner>{completeError}</ErrorBanner>
-      <ErrorBanner>{cancelError}</ErrorBanner>
-
-      {loading && <Spinner />}
-      {!loading && error && (
-        <ErrorBanner onRetry={() => dispatch(fetchTableReservations(fetchParams()))}>{error}</ErrorBanner>
-      )}
-
-      {!loading && !error && (
-        <TableCard>
+      <TableCard>
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-100 text-left">
@@ -129,7 +140,9 @@ export default function AdminTableReservations() {
               </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 ? (
+              {loading
+                ? Array.from({ length: 5 }, (_, i) => <SkeletonRow key={i} cols={9} />)
+                : filtered.length === 0 ? (
                 <tr><td colSpan={9}>
                   <EmptyState icon="🪑" title="No reservations found" subtitle="Try adjusting filters." />
                 </td></tr>
@@ -153,20 +166,20 @@ export default function AdminTableReservations() {
                     <div className="flex flex-wrap items-center gap-1.5">
                       {r.status === "reserved" && (
                         <button
-                          onClick={() => dispatch(seatTableReservation(r._id))}
+                          onClick={() => handleSeat(r._id)}
                           disabled={seatLoading === r._id}
-                          className="text-xs px-2.5 py-1.5 rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
+                          className="text-xs px-2.5 py-1.5 rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60 inline-flex items-center justify-center"
                         >
-                          {seatLoading === r._id ? "…" : "Seat"}
+                          {seatLoading === r._id ? <Spinner size="sm" color="white" /> : "Seat"}
                         </button>
                       )}
                       {r.status === "seated" && (
                         <button
-                          onClick={() => dispatch(completeTableReservation(r._id))}
+                          onClick={() => handleComplete(r._id)}
                           disabled={completeLoading === r._id}
-                          className="text-xs px-2.5 py-1.5 rounded-md bg-green-600 text-white hover:bg-green-700 disabled:opacity-60"
+                          className="text-xs px-2.5 py-1.5 rounded-md bg-green-600 text-white hover:bg-green-700 disabled:opacity-60 inline-flex items-center justify-center"
                         >
-                          {completeLoading === r._id ? "…" : "Complete"}
+                          {completeLoading === r._id ? <Spinner size="sm" color="white" /> : "Complete"}
                         </button>
                       )}
                       {(r.status === "reserved" || r.status === "seated") && (
@@ -178,16 +191,15 @@ export default function AdminTableReservations() {
               ))}
             </tbody>
           </table>
-        </TableCard>
-      )}
+      </TableCard>
 
       {confirmCancel && (
         <Modal title="Cancel Reservation?" onClose={() => setConfirmCancel(null)} size="max-w-sm"
           footer={
             <>
               <button onClick={() => setConfirmCancel(null)} className={btn.secondary}>Keep It</button>
-              <button onClick={handleCancel} disabled={cancelLoading === confirmCancel._id} className={btn.danger}>
-                {cancelLoading === confirmCancel._id ? "Cancelling…" : "Yes, Cancel"}
+              <button onClick={handleCancel} disabled={cancelLoading === confirmCancel._id} className={`${btn.danger} inline-flex items-center gap-1.5 justify-center`}>
+                {cancelLoading === confirmCancel._id ? <><Spinner size="sm" color="white" /> Cancelling…</> : "Yes, Cancel"}
               </button>
             </>
           }>

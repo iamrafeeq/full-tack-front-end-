@@ -7,8 +7,11 @@ import {
 } from "../../../redux/slice/eventHalls/eventHallSlice";
 import AdminLayout from "../../../components/admin/AdminLayout";
 import {
-  StatCard, TableCard, Th, Badge, Spinner, ErrorBanner, EmptyState, Modal, btn,
+  StatCard, TableCard, Th, Badge, EmptyState, Modal, btn,
 } from "../../../components/admin/AdminUI";
+import Spinner from "../../../components/Spinner";
+import SkeletonRow from "../../../components/SkeletonRow";
+import { notifySuccess, notifyError } from "../../../utils/toast";
 
 const STATUS_OPTIONS = ["available", "booked", "maintenance"];
 const STATUS_COLORS  = {
@@ -194,8 +197,8 @@ function HallFormModal({ editHall, onClose, onSuccess }) {
 
           <div className="flex justify-end gap-3 pt-2">
             <button type="button" onClick={onClose} className={btn.secondary}>Cancel</button>
-            <button type="submit" disabled={loading} className={btn.primary}>
-              {loading ? "Saving…" : isEditing ? "Save Changes" : "Add Hall"}
+            <button type="submit" disabled={loading} className={`${btn.primary} inline-flex items-center gap-1.5 justify-center`}>
+              {loading ? <><Spinner size="sm" color="white" /> Saving…</> : isEditing ? "Save Changes" : "Add Hall"}
             </button>
           </div>
         </form>
@@ -218,11 +221,15 @@ export default function AdminEventHalls() {
   const [statusFilter,     setStatusFilter]     = useState("all");
   const [includeInactive,  setIncludeInactive]  = useState(false);
   const [modal,            setModal]            = useState(null);
-  const [confirmDelete,    setConfirmDelete]    = useState(null);
-  const [deleteModalError, setDeleteModalError] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
   useEffect(() => { dispatch(fetchAllEventHalls(includeInactive)); }, [dispatch, includeInactive]);
   useEffect(() => () => dispatch(clearActionErrors()), [dispatch]);
+
+  useEffect(() => { if (statusError) notifyError(statusError); }, [statusError]);
+  useEffect(() => { if (deactivateError) notifyError(deactivateError); }, [deactivateError]);
+  useEffect(() => { if (activateError) notifyError(activateError); }, [activateError]);
+  useEffect(() => { if (error) notifyError(error); }, [error]);
 
   const filtered = useMemo(() =>
     halls.filter((h) => {
@@ -248,19 +255,32 @@ export default function AdminEventHalls() {
   }, [halls, total]);
 
   const openDeleteModal = (hall) => {
-    setDeleteModalError(null);
     dispatch(clearDeleteError());
     setConfirmDelete(hall);
   };
 
   const handleDelete = () => {
     if (!confirmDelete) return;
-    setDeleteModalError(null);
     dispatch(deleteEventHall(confirmDelete._id)).then((res) => {
-      if (!res.error) setConfirmDelete(null);
-      else setDeleteModalError(res.payload || "Failed to delete event hall.");
+      if (!res.error) {
+        notifySuccess(`Hall "${confirmDelete.hallName}" deleted.`);
+        setConfirmDelete(null);
+      } else {
+        notifyError(res.payload || "Failed to delete event hall.");
+        setConfirmDelete(null);
+      }
     });
   };
+
+  const handleActivate = (hall) =>
+    dispatch(activateEventHall(hall._id)).then((res) => {
+      if (!res.error) notifySuccess(`"${hall.hallName}" activated.`);
+    });
+
+  const handleDeactivate = (hall) =>
+    dispatch(deactivateEventHall(hall._id)).then((res) => {
+      if (!res.error) notifySuccess(`"${hall.hallName}" deactivated.`);
+    });
 
   return (
     <AdminLayout>
@@ -297,17 +317,7 @@ export default function AdminEventHalls() {
         <button onClick={() => setModal("create")} className={btn.primary}>+ Add Hall</button>
       </div>
 
-      <ErrorBanner>{statusError}</ErrorBanner>
-      <ErrorBanner>{deactivateError}</ErrorBanner>
-      <ErrorBanner>{activateError}</ErrorBanner>
-
-      {loading && <Spinner />}
-      {!loading && error && (
-        <ErrorBanner onRetry={() => dispatch(fetchAllEventHalls(includeInactive))}>{error}</ErrorBanner>
-      )}
-
-      {!loading && !error && (
-        <TableCard>
+      <TableCard>
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-100 text-left">
@@ -317,7 +327,9 @@ export default function AdminEventHalls() {
               </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 ? (
+              {loading
+                ? Array.from({ length: 5 }, (_, i) => <SkeletonRow key={i} cols={7} />)
+                : filtered.length === 0 ? (
                 <tr><td colSpan={7}>
                   <EmptyState icon="🏛️" title="No event halls found" subtitle="Nothing matches those filters."
                     action={<button onClick={() => { setSearch(""); setStatusFilter("all"); }} className={btn.primary}>Clear filters</button>}
@@ -354,12 +366,12 @@ export default function AdminEventHalls() {
                       <div className="flex flex-wrap items-center gap-1.5">
                         <button onClick={() => setModal(hall)} className={btn.ghostGold}>Edit</button>
                         {isInactive ? (
-                          <button onClick={() => dispatch(activateEventHall(hall._id))} disabled={activateLoading === hall._id} className={btn.secondary}>
-                            {activateLoading === hall._id ? "…" : "Activate"}
+                          <button onClick={() => handleActivate(hall)} disabled={activateLoading === hall._id} className={`${btn.secondary} inline-flex items-center justify-center`}>
+                            {activateLoading === hall._id ? <Spinner size="sm" color="#0B1F2A" /> : "Activate"}
                           </button>
                         ) : (
-                          <button onClick={() => dispatch(deactivateEventHall(hall._id))} disabled={deactivateLoading === hall._id} className={btn.secondary}>
-                            {deactivateLoading === hall._id ? "…" : "Deactivate"}
+                          <button onClick={() => handleDeactivate(hall)} disabled={deactivateLoading === hall._id} className={`${btn.secondary} inline-flex items-center justify-center`}>
+                            {deactivateLoading === hall._id ? <Spinner size="sm" color="#0B1F2A" /> : "Deactivate"}
                           </button>
                         )}
                         <button onClick={() => openDeleteModal(hall)} className={btn.ghostDanger}>Delete</button>
@@ -370,8 +382,7 @@ export default function AdminEventHalls() {
               })}
             </tbody>
           </table>
-        </TableCard>
-      )}
+      </TableCard>
 
       {modal && (
         <HallFormModal
@@ -386,22 +397,14 @@ export default function AdminEventHalls() {
           footer={
             <>
               <button onClick={() => setConfirmDelete(null)} className={btn.secondary}>Cancel</button>
-              <button onClick={handleDelete} disabled={deleteLoading} className={btn.danger}>
-                {deleteLoading ? "Deleting…" : "Yes, Delete"}
+              <button onClick={handleDelete} disabled={deleteLoading} className={`${btn.danger} inline-flex items-center gap-1.5 justify-center`}>
+                {deleteLoading ? <><Spinner size="sm" color="white" /> Deleting…</> : "Yes, Delete"}
               </button>
             </>
           }>
-          {deleteModalError ? (
-            <div className="rounded-lg bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-700">
-              <p className="font-medium mb-1">Cannot delete this hall</p>
-              <p>{deleteModalError}</p>
-              <p className="mt-2 text-red-500 text-xs">Use <strong>Deactivate</strong> to take it out of service while preserving its history.</p>
-            </div>
-          ) : (
-            <p className="text-sm text-gray-500">
-              This permanently removes the event hall. Halls with booking history must be deactivated instead.
-            </p>
-          )}
+          <p className="text-sm text-gray-500">
+            This permanently removes the event hall. Halls with booking history must be deactivated instead.
+          </p>
         </Modal>
       )}
     </AdminLayout>

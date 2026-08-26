@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { checkInBooking } from "../../redux/slice/Booking/bookingSlice";
 import { fetchTodayActivity } from "../../redux/slice/receptionist/receptionistSlice";
-import { Card, THead, GuestCell, RoomCell, PayBadge, Spinner, ErrBanner, Empty, fmtDate } from "./shared";
+import { Card, THead, GuestCell, RoomCell, PayBadge, Spinner, Empty, fmtDate } from "./shared";
 import CollectPaymentModal from "./CollectPaymentModal";
+import { notifySuccess, notifyError } from "../../utils/toast";
 
 export default function TodayArrivals() {
   const dispatch = useDispatch();
@@ -12,9 +13,15 @@ export default function TodayArrivals() {
 
   const [payBookingId, setPayBookingId] = useState(null);
 
+  useEffect(() => { if (todayError)   notifyError(todayError); },   [todayError]);
+  useEffect(() => { if (checkInError) notifyError(checkInError); }, [checkInError]);
+
   const handleCheckIn = async (id) => {
     const res = await dispatch(checkInBooking(id));
-    if (!res.error) dispatch(fetchTodayActivity());
+    if (!res.error) {
+      notifySuccess("Guest checked in successfully.");
+      dispatch(fetchTodayActivity());
+    }
   };
 
   return (
@@ -22,8 +29,6 @@ export default function TodayArrivals() {
       <Card title="Today's Arrivals" icon="🛬" count={arrivals.length}>
         {todayLoading ? (
           <Spinner />
-        ) : todayError ? (
-          <div className="px-6 py-4"><ErrBanner msg={todayError} /></div>
         ) : arrivals.length === 0 ? (
           <Empty msg="No arrivals expected today." />
         ) : (
@@ -68,9 +73,6 @@ export default function TodayArrivals() {
               </tbody>
             </table>
           </div>
-        )}
-        {checkInError && (
-          <div className="px-6 pb-3"><ErrBanner msg={checkInError} /></div>
         )}
       </Card>
 

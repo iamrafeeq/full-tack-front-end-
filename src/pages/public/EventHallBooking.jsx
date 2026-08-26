@@ -8,6 +8,7 @@ import { createEventHallBooking, clearCreateError } from "../../redux/slice/even
 import { createPaymentIntent, clearPaymentState } from "../../redux/slice/payments/paymentsSlice";
 import { useAuth } from "../../context/AuthContext";
 import StripeCheckoutForm from "../../components/payment/StripeCheckoutForm";
+import Spinner from "../../components/Spinner";
 
 const stripePromise = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
   ? loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
@@ -365,12 +366,10 @@ export default function EventHallBooking() {
                   <button
                     type="submit"
                     disabled={createLoading || intentLoading || !token || hours <= 0 || !selectedHall || !form.eventDate}
-                    className="w-full rounded-full bg-[#0B1F2A] py-3 font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:px-12"
+                    className="inline-flex items-center gap-1.5 justify-center w-full rounded-full bg-[#0B1F2A] py-3 font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:px-12"
                   >
-                    {createLoading
-                      ? "Creating booking…"
-                      : intentLoading
-                      ? "Preparing payment…"
+                    {(createLoading || intentLoading)
+                      ? <><Spinner size="sm" color="white" /> {createLoading ? "Creating booking…" : "Preparing payment…"}</>
                       : !token
                       ? "Log in to Book"
                       : "Book & Pay →"}

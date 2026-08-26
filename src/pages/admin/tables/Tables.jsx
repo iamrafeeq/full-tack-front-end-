@@ -7,8 +7,11 @@ import {
 } from "../../../redux/slice/tables/tableSlice";
 import AdminLayout from "../../../components/admin/AdminLayout";
 import {
-  StatCard, TableCard, Th, Badge, Spinner, ErrorBanner, EmptyState, Modal, btn,
+  StatCard, TableCard, Th, Badge, EmptyState, Modal, btn,
 } from "../../../components/admin/AdminUI";
+import Spinner from "../../../components/Spinner";
+import SkeletonRow from "../../../components/SkeletonRow";
+import { notifySuccess, notifyError } from "../../../utils/toast";
 
 const LOCATIONS      = ["indoor", "outdoor", "private-room"];
 const STATUS_OPTIONS = ["available", "reserved", "occupied", "cleaning"];
@@ -33,6 +36,7 @@ function TableFormModal({ editTable, onClose, onSuccess }) {
   const [errs, setErrs] = useState({});
 
   useEffect(() => { dispatch(clearFormErrors()); }, [dispatch]);
+  useEffect(() => { if (apiError) notifyError(apiError); }, [apiError]);
 
   const isEditing = !!editTable;
   const loading   = isEditing ? updateLoading : createLoading;
@@ -53,7 +57,13 @@ function TableFormModal({ editTable, onClose, onSuccess }) {
     const action = isEditing
       ? updateTable({ id: editTable._id, data })
       : createTable(data);
-    dispatch(action).then((res) => { if (!res.error) { onSuccess?.(); onClose(); } });
+    dispatch(action).then((res) => {
+      if (!res.error) {
+        notifySuccess(isEditing ? "Table updated." : "Table created.");
+        onSuccess?.();
+        onClose();
+      }
+    });
   };
 
   const field = (name) =>
@@ -72,9 +82,6 @@ function TableFormModal({ editTable, onClose, onSuccess }) {
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">×</button>
         </div>
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
-          {apiError && (
-            <div className="px-4 py-2.5 bg-red-50 border border-red-200 rounded-md text-sm text-red-600">{apiError}</div>
-          )}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Table Number *</label>
@@ -101,8 +108,8 @@ function TableFormModal({ editTable, onClose, onSuccess }) {
           </div>
           <div className="flex justify-end gap-3 pt-2">
             <button type="button" onClick={onClose} className={btn.secondary}>Cancel</button>
-            <button type="submit" disabled={loading} className={btn.primary}>
-              {loading ? "Saving…" : isEditing ? "Save Changes" : "Add Table"}
+            <button type="submit" disabled={loading} className={`${btn.primary} inline-flex items-center gap-1.5 justify-center`}>
+              {loading ? <><Spinner size="sm" color="white" /> Saving…</> : isEditing ? "Save Changes" : "Add Table"}
             </button>
           </div>
         </form>
@@ -126,11 +133,15 @@ export default function AdminTables() {
   const [statusFilter,    setStatusFilter]    = useState("all");
   const [includeInactive, setIncludeInactive] = useState(false);
   const [modal,           setModal]           = useState(null);
-  const [confirmDelete,   setConfirmDelete]   = useState(null);
-  const [deleteModalError, setDeleteModalError] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
   useEffect(() => { dispatch(fetchAllTables(includeInactive)); }, [dispatch, includeInactive]);
   useEffect(() => () => dispatch(clearActionErrors()), [dispatch]);
+
+  useEffect(() => { if (statusError) notifyError(statusError); }, [statusError]);
+  useEffect(() => { if (deactivateError) notifyError(deactivateError); }, [deactivateError]);
+  useEffect(() => { if (activateError) notifyError(activateError); }, [activateError]);
+  useEffect(() => { if (error) notifyError(error); }, [error]);
 
   const filtered = useMemo(() =>
     tables.filter((t) => {
@@ -156,19 +167,32 @@ export default function AdminTables() {
   }, [tables, total]);
 
   const openDeleteModal = (table) => {
-    setDeleteModalError(null);
     dispatch(clearDeleteError());
     setConfirmDelete(table);
   };
 
   const handleDelete = () => {
     if (!confirmDelete) return;
-    setDeleteModalError(null);
     dispatch(deleteTable(confirmDelete._id)).then((res) => {
-      if (!res.error) setConfirmDelete(null);
-      else setDeleteModalError(res.payload || "Failed to delete table.");
+      if (!res.error) {
+        notifySuccess(`Table ${confirmDelete.tableNumber} deleted.`);
+        setConfirmDelete(null);
+      } else {
+        notifyError(res.payload || "Failed to delete table.");
+        setConfirmDelete(null);
+      }
     });
   };
+
+  const handleActivate = (table) =>
+    dispatch(activateTable(table._id)).then((res) => {
+      if (!res.error) notifySuccess(`Table ${table.tableNumber} activated.`);
+    });
+
+  const handleDeactivate = (table) =>
+    dispatch(deactivateTable(table._id)).then((res) => {
+      if (!res.error) notifySuccess(`Table ${table.tableNumber} deactivated.`);
+    });
 
   return (
     <AdminLayout>
@@ -211,17 +235,7 @@ export default function AdminTables() {
         <button onClick={() => setModal("create")} className={btn.primary}>+ Add Table</button>
       </div>
 
-      <ErrorBanner>{statusError}</ErrorBanner>
-      <ErrorBanner>{deactivateError}</ErrorBanner>
-      <ErrorBanner>{activateError}</ErrorBanner>
-
-      {loading && <Spinner />}
-      {!loading && error && (
-        <ErrorBanner onRetry={() => dispatch(fetchAllTables(includeInactive))}>{error}</ErrorBanner>
-      )}
-
-      {!loading && !error && (
-        <TableCard>
+      <TableCard>
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-100 text-left">
@@ -231,7 +245,9 @@ export default function AdminTables() {
               </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 ? (
+              {loading
+                ? Array.from({ length: 5 }, (_, i) => <SkeletonRow key={i} cols={6} />)
+                : filtered.length === 0 ? (
                 <tr><td colSpan={6}>
                   <EmptyState icon="🪑" title="No tables found" subtitle="Nothing matches those filters."
                     action={<button onClick={() => { setSearch(""); setLocationFilter("all"); setStatusFilter("all"); }} className={btn.primary}>Clear filters</button>}
@@ -257,12 +273,12 @@ export default function AdminTables() {
                       <div className="flex flex-wrap items-center gap-1.5">
                         <button onClick={() => setModal(table)} className={btn.ghostGold}>Edit</button>
                         {isInactive ? (
-                          <button onClick={() => dispatch(activateTable(table._id))} disabled={activateLoading === table._id} className={btn.secondary}>
-                            {activateLoading === table._id ? "…" : "Activate"}
+                          <button onClick={() => handleActivate(table)} disabled={activateLoading === table._id} className={`${btn.secondary} inline-flex items-center justify-center`}>
+                            {activateLoading === table._id ? <Spinner size="sm" color="#0B1F2A" /> : "Activate"}
                           </button>
                         ) : (
-                          <button onClick={() => dispatch(deactivateTable(table._id))} disabled={deactivateLoading === table._id} className={btn.secondary}>
-                            {deactivateLoading === table._id ? "…" : "Deactivate"}
+                          <button onClick={() => handleDeactivate(table)} disabled={deactivateLoading === table._id} className={`${btn.secondary} inline-flex items-center justify-center`}>
+                            {deactivateLoading === table._id ? <Spinner size="sm" color="#0B1F2A" /> : "Deactivate"}
                           </button>
                         )}
                         <button onClick={() => openDeleteModal(table)} className={btn.ghostDanger}>Delete</button>
@@ -273,8 +289,7 @@ export default function AdminTables() {
               })}
             </tbody>
           </table>
-        </TableCard>
-      )}
+      </TableCard>
 
       {modal && (
         <TableFormModal
@@ -289,22 +304,14 @@ export default function AdminTables() {
           footer={
             <>
               <button onClick={() => setConfirmDelete(null)} className={btn.secondary}>Cancel</button>
-              <button onClick={handleDelete} disabled={deleteLoading} className={btn.danger}>
-                {deleteLoading ? "Deleting…" : "Yes, Delete"}
+              <button onClick={handleDelete} disabled={deleteLoading} className={`${btn.danger} inline-flex items-center gap-1.5 justify-center`}>
+                {deleteLoading ? <><Spinner size="sm" color="white" /> Deleting…</> : "Yes, Delete"}
               </button>
             </>
           }>
-          {deleteModalError ? (
-            <div className="rounded-lg bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-700">
-              <p className="font-medium mb-1">Cannot delete this table</p>
-              <p>{deleteModalError}</p>
-              <p className="mt-2 text-red-500 text-xs">Use <strong>Deactivate</strong> to take it out of service while preserving its history.</p>
-            </div>
-          ) : (
-            <p className="text-sm text-gray-500">
-              This permanently removes the table. Tables with reservation history must be deactivated instead.
-            </p>
-          )}
+          <p className="text-sm text-gray-500">
+            This permanently removes the table. Tables with reservation history must be deactivated instead.
+          </p>
         </Modal>
       )}
     </AdminLayout>

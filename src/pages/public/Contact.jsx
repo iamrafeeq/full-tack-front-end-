@@ -4,6 +4,8 @@ import {
   submitContact,
   clearSubmitState,
 } from "../../redux/slice/contactUs/contactusSlice";
+import Spinner from "../../components/Spinner";
+import { notifySuccess, notifyError } from "../../utils/toast";
 
 const businessHours = [
   { day: "Monday - Friday", time: "8:00 AM - 10:00 PM" },
@@ -49,13 +51,14 @@ function Contact() {
   });
   const [openFaq, setOpenFaq] = useState(null);
 
-  // Clear success banner after 5s and reset form
   useEffect(() => {
     if (!submitSuccess) return;
+    notifySuccess("Message sent! We'll get back to you shortly.");
     setFormData({ name: "", email: "", phone: "", subject: "", message: "" });
-    const t = setTimeout(() => dispatch(clearSubmitState()), 5000);
-    return () => clearTimeout(t);
+    dispatch(clearSubmitState());
   }, [submitSuccess, dispatch]);
+
+  useEffect(() => { if (submitError) notifyError(submitError); }, [submitError]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -118,18 +121,6 @@ function Contact() {
             <h2 className="font-serif text-2xl text-[#0B1F2A] sm:text-3xl">
               Send Us A Message
             </h2>
-
-            {submitSuccess && (
-              <p className="mt-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">
-                Thank you! Your message has been sent. We'll get back to you
-                shortly.
-              </p>
-            )}
-            {submitError && (
-              <p className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
-                {submitError}
-              </p>
-            )}
 
             <form onSubmit={handleSubmit} className="mt-8 space-y-4">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -205,9 +196,9 @@ function Contact() {
               <button
                 type="submit"
                 disabled={submitLoading}
-                className="w-full rounded-full bg-[#0B1F2A] py-3 font-medium text-white transition hover:scale-105 hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed sm:w-auto sm:px-10"
+                className="inline-flex items-center gap-1.5 justify-center w-full rounded-full bg-[#0B1F2A] py-3 font-medium text-white transition hover:scale-105 hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed sm:w-auto sm:px-10"
               >
-                {submitLoading ? "Sending…" : "Send Message"}
+                {submitLoading ? <><Spinner size="sm" color="white" /> Sending…</> : "Send Message"}
               </button>
             </form>
           </div>

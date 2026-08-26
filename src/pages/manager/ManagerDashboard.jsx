@@ -4,6 +4,7 @@ import { fetchBookings } from "../../redux/slice/Booking/bookingSlice";
 import { fetchAllRooms } from "../../redux/slice/roomSlice/roomSlice";
 import ManagerLayout from "../../components/manager/ManagerLayout";
 import MaintenanceRequestsView from "../../components/maintenance/MaintenanceRequestsView";
+import SkeletonRow from "../../components/SkeletonRow";
 
 const STATUS_STYLES = {
   "booked":      "bg-blue-100 text-blue-700",
@@ -86,9 +87,7 @@ export default function ManagerDashboard() {
           </select>
         </div>
 
-        {bookingsLoading ? (
-          <Spinner />
-        ) : bookingsError ? (
+        {bookingsError ? (
           <ErrBanner msg={bookingsError} />
         ) : (
           <div className="overflow-x-auto">
@@ -101,9 +100,9 @@ export default function ManagerDashboard() {
                     </th>
                   ))}
                 </tr>
-              </thead> 
+              </thead>
               <tbody>
-                {filteredBookings.length === 0 ? (
+                {bookingsLoading ? Array.from({length: 5}, (_, i) => <SkeletonRow key={i} cols={9} />) : filteredBookings.length === 0 ? (
                   <tr>
                     <td colSpan={9} className="text-center py-12 text-gray-400">No bookings found.</td>
                   </tr>
@@ -176,9 +175,7 @@ export default function ManagerDashboard() {
           </select>
         }
       >
-        {roomsLoading ? (
-          <Spinner />
-        ) : filteredRooms.length === 0 ? (
+        {filteredRooms.length === 0 && !roomsLoading ? (
           <p className="text-center text-gray-400 text-sm py-8">No rooms match this filter.</p>
         ) : (
           <div className="overflow-x-auto">
@@ -193,7 +190,7 @@ export default function ManagerDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {filteredRooms.map((r) => (
+                {roomsLoading ? Array.from({length: 5}, (_, i) => <SkeletonRow key={i} cols={6} />) : filteredRooms.map((r) => (
                   <tr key={r._id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 font-medium text-[#0B1F2A]">{r.roomNumber}</td>
                     <td className="px-4 py-3 capitalize text-gray-600">{r.type}</td>

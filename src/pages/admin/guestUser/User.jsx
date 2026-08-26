@@ -2,9 +2,11 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { guestUserAPI } from "../../../redux/slice/adminSlice/guestUser";
 import AdminLayout from "../../../components/admin/AdminLayout";
+import { notifyError } from "../../../utils/toast";
 import StatusToggle from "../../../components/admin/users/StatusToggle";
 import RoleSelect from "../../../components/admin/users/RoleSelect";
 import UserDetailModal from "../../../components/admin/users/UserDetailModal";
+import SkeletonRow from "../../../components/SkeletonRow";
 
 const ROLE_STYLES = {
   admin:        "bg-[#C9A24B]/15 text-[#9A7A2E]",
@@ -20,6 +22,10 @@ const STATUS_FILTERS = ["all", "active", "inactive"];
 export default function GuestUsers() {
   const dispatch = useDispatch();
   const { data, loading, error, statusError, roleError } = useSelector((state) => state.guestUser);
+
+  useEffect(() => { if (error) notifyError(error); }, [error]);
+  useEffect(() => { if (statusError) notifyError(statusError); }, [statusError]);
+  useEffect(() => { if (roleError) notifyError(roleError); }, [roleError]);
 
   const [search, setSearch]             = useState("");
   const [roleFilter, setRoleFilter]     = useState("all");
@@ -91,46 +97,26 @@ export default function GuestUsers() {
         </span>
       </div>
 
-      {/* Action errors */}
-      {(statusError || roleError) && (
-        <div className="mb-4 px-4 py-2.5 bg-red-50 border border-red-200 rounded-md text-sm text-red-600">
-          {statusError || roleError}
-        </div>
-      )}
-
-      {/* Loading */}
-      {loading && (
-        <div className="flex justify-center py-20">
-          <div className="w-8 h-8 border-4 border-[#C9A24B] border-t-transparent rounded-full animate-spin" />
-        </div>
-      )}
-
-      {/* Fetch error */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-md">
-          {error}
-        </div>
-      )}
-
       {/* Table */}
-      {!loading && !error && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-100 text-left">
-                <th className="px-5 py-3 text-xs uppercase tracking-wide text-gray-400 font-medium">#</th>
-                <th className="px-5 py-3 text-xs uppercase tracking-wide text-gray-400 font-medium">Name</th>
-                <th className="px-5 py-3 text-xs uppercase tracking-wide text-gray-400 font-medium">Email</th>
-                <th className="px-5 py-3 text-xs uppercase tracking-wide text-gray-400 font-medium">Phone</th>
-                <th className="px-5 py-3 text-xs uppercase tracking-wide text-gray-400 font-medium">Role</th>
-                <th className="px-5 py-3 text-xs uppercase tracking-wide text-gray-400 font-medium">Assign Role</th>
-                <th className="px-5 py-3 text-xs uppercase tracking-wide text-gray-400 font-medium">Status</th>
-                <th className="px-5 py-3 text-xs uppercase tracking-wide text-gray-400 font-medium">Joined</th>
-                <th className="px-5 py-3 text-xs uppercase tracking-wide text-gray-400 font-medium">Details</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.length === 0 ? (
+      <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-gray-100 text-left">
+              <th className="px-5 py-3 text-xs uppercase tracking-wide text-gray-400 font-medium">#</th>
+              <th className="px-5 py-3 text-xs uppercase tracking-wide text-gray-400 font-medium">Name</th>
+              <th className="px-5 py-3 text-xs uppercase tracking-wide text-gray-400 font-medium">Email</th>
+              <th className="px-5 py-3 text-xs uppercase tracking-wide text-gray-400 font-medium">Phone</th>
+              <th className="px-5 py-3 text-xs uppercase tracking-wide text-gray-400 font-medium">Role</th>
+              <th className="px-5 py-3 text-xs uppercase tracking-wide text-gray-400 font-medium">Assign Role</th>
+              <th className="px-5 py-3 text-xs uppercase tracking-wide text-gray-400 font-medium">Status</th>
+              <th className="px-5 py-3 text-xs uppercase tracking-wide text-gray-400 font-medium">Joined</th>
+              <th className="px-5 py-3 text-xs uppercase tracking-wide text-gray-400 font-medium">Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading
+              ? Array.from({ length: 5 }, (_, i) => <SkeletonRow key={i} cols={9} />)
+              : filtered.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="text-center py-12 text-gray-400">
                     No users found.
@@ -187,10 +173,9 @@ export default function GuestUsers() {
                   </tr>
                 ))
               )}
-            </tbody>
-          </table>
-        </div>
-      )}
+          </tbody>
+        </table>
+      </div>
 
       {/* User detail modal */}
       <UserDetailModal

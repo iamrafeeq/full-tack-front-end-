@@ -10,8 +10,11 @@ import {
 } from "../../../redux/slice/eventHallBookings/eventHallBookingSlice";
 import AdminLayout from "../../../components/admin/AdminLayout";
 import {
-  StatCard, TableCard, Th, Badge, Spinner, ErrorBanner, EmptyState, Modal, btn, fmtDate,
+  StatCard, TableCard, Th, Badge, EmptyState, Modal, btn, fmtDate,
 } from "../../../components/admin/AdminUI";
+import Spinner from "../../../components/Spinner";
+import SkeletonRow from "../../../components/SkeletonRow";
+import { notifySuccess, notifyError } from "../../../utils/toast";
 
 const STATUS_OPTIONS    = ["booked", "confirmed", "in-progress", "completed", "cancelled"];
 const PAYMENT_COLORS    = { pending: "bg-orange-100 text-orange-700", paid: "bg-green-100 text-green-700" };
@@ -57,6 +60,12 @@ export default function AdminEventHallBookings() {
 
   useEffect(() => () => dispatch(clearActionErrors()), [dispatch]);
 
+  useEffect(() => { if (confirmError) notifyError(confirmError); }, [confirmError]);
+  useEffect(() => { if (startError) notifyError(startError); }, [startError]);
+  useEffect(() => { if (completeError) notifyError(completeError); }, [completeError]);
+  useEffect(() => { if (cancelError) notifyError(cancelError); }, [cancelError]);
+  useEffect(() => { if (error) notifyError(error); }, [error]);
+
   const filtered = bookings.filter((b) => {
     if (!search) return true;
     const q = search.toLowerCase();
@@ -79,9 +88,27 @@ export default function AdminEventHallBookings() {
   const handleCancel = () => {
     if (!confirmCancel) return;
     dispatch(cancelEventHallBooking(confirmCancel._id)).then((res) => {
-      if (!res.error) setConfirmCancel(null);
+      if (!res.error) {
+        notifySuccess("Event hall booking cancelled.");
+        setConfirmCancel(null);
+      }
     });
   };
+
+  const handleConfirm = (id) =>
+    dispatch(confirmEventHallBooking(id)).then((res) => {
+      if (!res.error) notifySuccess("Booking confirmed.");
+    });
+
+  const handleStart = (id) =>
+    dispatch(startEventHallBooking(id)).then((res) => {
+      if (!res.error) notifySuccess("Event started.");
+    });
+
+  const handleComplete = (id) =>
+    dispatch(completeEventHallBooking(id)).then((res) => {
+      if (!res.error) notifySuccess("Event completed.");
+    });
 
   const todayStr = new Date().toISOString().split("T")[0];
 
@@ -120,18 +147,7 @@ export default function AdminEventHallBookings() {
         <span className="text-sm text-gray-400 whitespace-nowrap ml-auto">{filtered.length} bookings</span>
       </div>
 
-      <ErrorBanner>{confirmError}</ErrorBanner>
-      <ErrorBanner>{startError}</ErrorBanner>
-      <ErrorBanner>{completeError}</ErrorBanner>
-      <ErrorBanner>{cancelError}</ErrorBanner>
-
-      {loading && <Spinner />}
-      {!loading && error && (
-        <ErrorBanner onRetry={() => dispatch(fetchEventHallBookings(fetchParams()))}>{error}</ErrorBanner>
-      )}
-
-      {!loading && !error && (
-        <TableCard>
+      <TableCard>
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-100 text-left">
@@ -141,7 +157,9 @@ export default function AdminEventHallBookings() {
               </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 ? (
+              {loading
+                ? Array.from({ length: 5 }, (_, i) => <SkeletonRow key={i} cols={10} />)
+                : filtered.length === 0 ? (
                 <tr><td colSpan={10}>
                   <EmptyState icon="🏛️" title="No event hall bookings found" subtitle="Try adjusting filters." />
                 </td></tr>
@@ -171,25 +189,25 @@ export default function AdminEventHallBookings() {
                       <div className="flex flex-wrap items-center gap-1.5">
                         {b.status === "booked" && (
                           <button
-                            onClick={() => dispatch(confirmEventHallBooking(b._id))}
+                            onClick={() => handleConfirm(b._id)}
                             disabled={confirmLoading === b._id}
-                            className="text-xs px-2.5 py-1.5 rounded-md bg-[#C9A24B] text-[#0B1F2A] font-medium hover:opacity-90 disabled:opacity-60"
+                            className="text-xs px-2.5 py-1.5 rounded-md bg-[#C9A24B] text-[#0B1F2A] font-medium hover:opacity-90 disabled:opacity-60 inline-flex items-center justify-center"
                           >
-                            {confirmLoading === b._id ? "…" : "Confirm"}
+                            {confirmLoading === b._id ? <Spinner size="sm" color="#0B1F2A" /> : "Confirm"}
                           </button>
                         )}
                         {b.status === "confirmed" && (
                           <div className="relative group">
                             <button
-                              onClick={() => !paymentPending && dispatch(startEventHallBooking(b._id))}
+                              onClick={() => !paymentPending && handleStart(b._id)}
                               disabled={startLoading === b._id || paymentPending}
-                              className={`text-xs px-2.5 py-1.5 rounded-md font-medium transition-colors ${
+                              className={`text-xs px-2.5 py-1.5 rounded-md font-medium transition-colors inline-flex items-center justify-center ${
                                 paymentPending
                                   ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                                   : "bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-60"
                               }`}
                             >
-                              {startLoading === b._id ? "…" : "Start Event"}
+                              {startLoading === b._id ? <Spinner size="sm" color="white" /> : "Start Event"}
                             </button>
                             {paymentPending && (
                               <div className="absolute bottom-full left-0 mb-1.5 z-20 w-48 bg-[#0B1F2A] text-white text-xs rounded-md px-2.5 py-1.5 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-normal">
@@ -200,11 +218,11 @@ export default function AdminEventHallBookings() {
                         )}
                         {b.status === "in-progress" && (
                           <button
-                            onClick={() => dispatch(completeEventHallBooking(b._id))}
+                            onClick={() => handleComplete(b._id)}
                             disabled={completeLoading === b._id}
-                            className="text-xs px-2.5 py-1.5 rounded-md bg-green-600 text-white hover:bg-green-700 disabled:opacity-60"
+                            className="text-xs px-2.5 py-1.5 rounded-md bg-green-600 text-white hover:bg-green-700 disabled:opacity-60 inline-flex items-center justify-center"
                           >
-                            {completeLoading === b._id ? "…" : "Complete"}
+                            {completeLoading === b._id ? <Spinner size="sm" color="white" /> : "Complete"}
                           </button>
                         )}
                         {(b.status === "booked" || b.status === "confirmed") && (
@@ -217,16 +235,15 @@ export default function AdminEventHallBookings() {
               })}
             </tbody>
           </table>
-        </TableCard>
-      )}
+      </TableCard>
 
       {confirmCancel && (
         <Modal title="Cancel Event Hall Booking?" onClose={() => setConfirmCancel(null)} size="max-w-sm"
           footer={
             <>
               <button onClick={() => setConfirmCancel(null)} className={btn.secondary}>Keep It</button>
-              <button onClick={handleCancel} disabled={cancelLoading === confirmCancel._id} className={btn.danger}>
-                {cancelLoading === confirmCancel._id ? "Cancelling…" : "Yes, Cancel"}
+              <button onClick={handleCancel} disabled={cancelLoading === confirmCancel._id} className={`${btn.danger} inline-flex items-center gap-1.5 justify-center`}>
+                {cancelLoading === confirmCancel._id ? <><Spinner size="sm" color="white" /> Cancelling…</> : "Yes, Cancel"}
               </button>
             </>
           }>

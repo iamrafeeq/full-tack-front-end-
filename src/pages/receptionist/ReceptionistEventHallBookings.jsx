@@ -9,6 +9,8 @@ import {
   clearActionErrors,
 } from "../../redux/slice/eventHallBookings/eventHallBookingSlice";
 import ReceptionistLayout from "../../components/receptionist/ReceptionistLayout";
+import { notifySuccess, notifyError } from "../../utils/toast";
+import SkeletonRow from "../../components/SkeletonRow";
 
 const fmtDate = (iso) =>
   iso ? new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—";
@@ -64,13 +66,36 @@ export default function ReceptionistEventHallBookings() {
 
   useEffect(() => () => dispatch(clearActionErrors()), [dispatch]);
 
-  const actionError = confirmError || startError || completeError || cancelError;
+  useEffect(() => { if (confirmError)  notifyError(confirmError); },  [confirmError]);
+  useEffect(() => { if (startError)    notifyError(startError); },    [startError]);
+  useEffect(() => { if (completeError) notifyError(completeError); }, [completeError]);
+  useEffect(() => { if (cancelError)   notifyError(cancelError); },   [cancelError]);
+  useEffect(() => { if (error)         notifyError(error); },         [error]);
+
+  const handleConfirm = (id) =>
+    dispatch(confirmEventHallBooking(id)).then((res) => {
+      if (!res.error) notifySuccess("Booking confirmed.");
+    });
+
+  const handleStart = (id) =>
+    dispatch(startEventHallBooking(id)).then((res) => {
+      if (!res.error) notifySuccess("Event started.");
+    });
+
+  const handleComplete = (id) =>
+    dispatch(completeEventHallBooking(id)).then((res) => {
+      if (!res.error) notifySuccess("Event completed.");
+    });
+
+  const handleCancel = (id) =>
+    dispatch(cancelEventHallBooking(id)).then((res) => {
+      if (!res.error) notifySuccess("Event hall booking cancelled.");
+    });
 
   return (
     <ReceptionistLayout title="Event Hall Bookings">
       <div className="space-y-5">
 
-        {/* Filters */}
         <div className="flex flex-wrap items-center gap-3">
           <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
             className="text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:border-[#C9A24B]">
@@ -96,41 +121,30 @@ export default function ReceptionistEventHallBookings() {
           <span className="text-sm text-gray-400 ml-auto">{bookings.length} bookings</span>
         </div>
 
-        {actionError && (
-          <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">{actionError}</div>
-        )}
-
-        {loading && (
-          <div className="flex justify-center py-12">
-            <div className="w-8 h-8 rounded-full border-2 border-[#C9A24B] border-t-transparent animate-spin" />
-          </div>
-        )}
-
-        {!loading && error && (
-          <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">{error}</div>
-        )}
-
-        {!loading && !error && bookings.length === 0 && (
-          <div className="bg-white rounded-xl border border-gray-100 py-14 text-center">
-            <p className="text-4xl mb-3">🏛️</p>
-            <p className="font-medium text-gray-500">No event hall bookings found</p>
-            <p className="text-sm text-gray-400 mt-1">Try adjusting the filters.</p>
-          </div>
-        )}
-
-        {!loading && !error && bookings.length > 0 && (
-          <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-gray-100 text-left text-xs uppercase tracking-wide text-gray-500">
-                    {["Guest", "Hall", "Date", "Time", "Type", "Guests", "Payment", "Status", "Actions"].map((h) => (
-                      <th key={h} className="px-4 py-3 font-medium">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {bookings.map((b) => {
+        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-100 text-left text-xs uppercase tracking-wide text-gray-500">
+                  {["Guest", "Hall", "Date", "Time", "Type", "Guests", "Payment", "Status", "Actions"].map((h) => (
+                    <th key={h} className="px-4 py-3 font-medium">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {loading
+                  ? Array.from({ length: 5 }, (_, i) => <SkeletonRow key={i} cols={9} />)
+                  : bookings.length === 0
+                  ? (
+                    <tr>
+                      <td colSpan={9} className="py-14 text-center">
+                        <p className="text-4xl mb-3">🏛️</p>
+                        <p className="font-medium text-gray-500">No event hall bookings found</p>
+                        <p className="text-sm text-gray-400 mt-1">Try adjusting the filters.</p>
+                      </td>
+                    </tr>
+                  )
+                  : bookings.map((b) => {
                     const paymentPending = b.paymentStatus !== "paid";
                     return (
                       <tr key={b._id} className="border-b border-gray-50 hover:bg-gray-50/60 transition-colors">
@@ -161,7 +175,7 @@ export default function ReceptionistEventHallBookings() {
                           <div className="flex flex-wrap items-center gap-1.5">
                             {b.status === "booked" && (
                               <button
-                                onClick={() => dispatch(confirmEventHallBooking(b._id))}
+                                onClick={() => handleConfirm(b._id)}
                                 disabled={confirmLoading === b._id}
                                 className="text-xs px-2.5 py-1.5 rounded-md bg-[#C9A24B] text-[#0B1F2A] font-medium hover:opacity-90 disabled:opacity-60"
                               >
@@ -171,7 +185,7 @@ export default function ReceptionistEventHallBookings() {
                             {b.status === "confirmed" && (
                               <div className="relative group">
                                 <button
-                                  onClick={() => !paymentPending && dispatch(startEventHallBooking(b._id))}
+                                  onClick={() => !paymentPending && handleStart(b._id)}
                                   disabled={startLoading === b._id || paymentPending}
                                   className={`text-xs px-2.5 py-1.5 rounded-md font-medium transition-colors ${
                                     paymentPending
@@ -190,7 +204,7 @@ export default function ReceptionistEventHallBookings() {
                             )}
                             {b.status === "in-progress" && (
                               <button
-                                onClick={() => dispatch(completeEventHallBooking(b._id))}
+                                onClick={() => handleComplete(b._id)}
                                 disabled={completeLoading === b._id}
                                 className="text-xs px-2.5 py-1.5 rounded-md bg-green-600 text-white hover:bg-green-700 disabled:opacity-60"
                               >
@@ -199,7 +213,7 @@ export default function ReceptionistEventHallBookings() {
                             )}
                             {(b.status === "booked" || b.status === "confirmed") && (
                               <button
-                                onClick={() => dispatch(cancelEventHallBooking(b._id))}
+                                onClick={() => handleCancel(b._id)}
                                 disabled={cancelLoading === b._id}
                                 className="text-xs px-2.5 py-1.5 rounded-md border border-red-300 text-red-500 hover:bg-red-50 disabled:opacity-60"
                               >
@@ -211,11 +225,10 @@ export default function ReceptionistEventHallBookings() {
                       </tr>
                     );
                   })}
-                </tbody>
-              </table>
-            </div>
+              </tbody>
+            </table>
           </div>
-        )}
+        </div>
       </div>
     </ReceptionistLayout>
   );

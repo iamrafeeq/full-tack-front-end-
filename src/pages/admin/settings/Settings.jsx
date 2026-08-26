@@ -6,6 +6,8 @@ import {
   updateSettings,
   clearUpdateStatus,
 } from "../../../redux/slice/settings/settingsSlice";
+import { notifySuccess, notifyError } from "../../../utils/toast";
+import Spinner from "../../../components/Spinner";
 
 export default function Settings() {
   const dispatch = useDispatch();
@@ -35,12 +37,15 @@ export default function Settings() {
     }
   }, [data]);
 
-  // Auto-clear success banner after 3 s
   useEffect(() => {
     if (!updateSuccess) return;
+    notifySuccess("Settings saved successfully.");
     const id = setTimeout(() => dispatch(clearUpdateStatus()), 3000);
     return () => clearTimeout(id);
   }, [updateSuccess, dispatch]);
+
+  useEffect(() => { if (updateError) notifyError(updateError); }, [updateError]);
+  useEffect(() => { if (error) notifyError(error); }, [error]);
 
   const handleChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -66,27 +71,9 @@ export default function Settings() {
         </div>
       )}
 
-      {/* Fetch error */}
-      {!loading && error && (
-        <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
-          {error}
-        </div>
-      )}
-
       {/* Form */}
       {!loading && !error && (
         <div className="max-w-xl">
-          {updateSuccess && (
-            <div className="mb-5 px-4 py-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
-              Settings saved successfully.
-            </div>
-          )}
-          {updateError && (
-            <div className="mb-5 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
-              {updateError}
-            </div>
-          )}
-
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Tax Percentage */}
             <div>
@@ -156,9 +143,9 @@ export default function Settings() {
             <button
               type="submit"
               disabled={updateLoading}
-              className="px-6 py-2.5 rounded-lg bg-[#0B1F2A] text-white text-sm font-medium hover:opacity-90 disabled:opacity-60 transition-opacity"
+              className="inline-flex items-center gap-1.5 justify-center px-6 py-2.5 rounded-lg bg-[#0B1F2A] text-white text-sm font-medium hover:opacity-90 disabled:opacity-60 transition-opacity"
             >
-              {updateLoading ? "Saving…" : "Save Settings"}
+              {updateLoading ? <><Spinner size="sm" color="white" /> Save Settings</> : "Save Settings"}
             </button>
           </form>
         </div>

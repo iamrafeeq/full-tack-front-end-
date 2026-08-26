@@ -16,20 +16,10 @@ const TYPE_IMAGES = {
 const DEFAULT_IMAGE =
   "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=900&q=80";
 
-const iso = (d) => d.toISOString().split("T")[0];
-const addDays = (d, n) => {
-  const x = new Date(d);
-  x.setDate(x.getDate() + n);
-  return x;
-};
-const pretty = (s) =>
-  s
-    ? new Date(`${s}T00:00:00`).toLocaleDateString("en-US", {
-        weekday: "short",
-        month: "short",
-        day: "numeric",
-      })
-    : "";
+const iso    = (d) => d.toISOString().split("T")[0];
+const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+const pretty  = (s) =>
+  s ? new Date(`${s}T00:00:00`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }) : "";
 
 export default function AvailabilityWidget() {
   const dispatch = useDispatch();
@@ -50,77 +40,72 @@ export default function AvailabilityWidget() {
     return d > 0 ? Math.round(d) : 0;
   })();
 
-  const reset = () => {
-    setSelected(null);
-    dispatch(clearAvailability());
-  };
+  const reset = () => { setSelected(null); dispatch(clearAvailability()); };
 
   const presets = [
-    { key: "tonight", label: "Tonight",      make: () => [today, addDays(today, 1)] },
-    {
-      key: "weekend",
-      label: "This weekend",
-      make: () => {
-        const f = addDays(today, (5 - today.getDay() + 7) % 7 || 7);
-        return [f, addDays(f, 2)];
-      },
-    },
-    { key: "week", label: "Next week", make: () => [addDays(today, 7), addDays(today, 12)] },
+    { key: "tonight", label: "Tonight",       make: () => [today, addDays(today, 1)] },
+    { key: "weekend", label: "This weekend",  make: () => { const f = addDays(today, (5 - today.getDay() + 7) % 7 || 7); return [f, addDays(f, 2)]; } },
+    { key: "week",    label: "Next 5 nights", make: () => [addDays(today, 7), addDays(today, 12)] },
   ];
 
   const applyPreset = (p) => {
     const [a, b] = p.make();
-    setCheckIn(iso(a));
-    setCheckOut(iso(b));
-    setPreset(p.key);
-    reset();
+    setCheckIn(iso(a)); setCheckOut(iso(b)); setPreset(p.key); reset();
   };
 
-  const results  = availableRooms || [];
-  const cheapest = results.length
-    ? results.reduce((m, r) =>
-        (r.discountPrice || r.price) < (m.discountPrice || m.price) ? r : m
-      )
-    : null;
+  const results   = availableRooms || [];
+  const cheapest  = results.length ? results.reduce((m, r) => (r.discountPrice || r.price) < (m.discountPrice || m.price) ? r : m) : null;
   const selectedRoom  = results.find((r) => r._id === selected) || null;
   const selectedPrice = selectedRoom ? selectedRoom.discountPrice || selectedRoom.price : 0;
 
   return (
-    <div id="book" className="relative z-20 max-w-6xl mx-auto px-6 -mt-24">
-      <div className="bg-white rounded-[20px] shadow-2xl px-8 pt-7 pb-8 [color-scheme:light]">
+    <div id="book" className="relative z-20 max-w-6xl mx-auto px-3 sm:px-6 -mt-16 sm:-mt-24">
+      <div className="bg-white rounded-2xl shadow-2xl px-4 sm:px-8 pt-5 sm:pt-7 pb-6 sm:pb-8 [color-scheme:light]">
 
-        {/* Heading + presets */}
-        <div className="flex items-baseline justify-between gap-6 flex-wrap mb-5">
-          <div>
-            <p className="font-serif text-[22px] text-[#0B1F2A]">Find your stay</p>
-            <p className="text-[13px] text-gray-500 mt-1">
-              Pick your dates — we'll show what's free and what it costs. No account needed to look.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-400">Popular:</span>
-            <div className="flex gap-2">
-              {presets.map((p) => (
-                <button
-                  key={p.key}
-                  onClick={() => applyPreset(p)}
-                  className={`text-xs font-semibold px-3.5 py-[7px] rounded-full border transition-colors ${
-                    preset === p.key
-                      ? "bg-[#C9A24B] border-[#C9A24B] text-[#0B1F2A]"
-                      : "bg-white border-gray-200 text-gray-600 hover:border-[#C9A24B]"
-                  }`}
-                >
-                  {p.label}
-                </button>
-              ))}
-            </div>
-          </div>
+        {/* ── Header ── */}
+        <div className="mb-4 sm:mb-5">
+          <p className="font-serif text-xl sm:text-[22px] text-[#0B1F2A]">Find your stay</p>
+          <p className="text-xs sm:text-[13px] text-gray-500 mt-1">
+            Pick dates — we'll show what's free and the price. No account needed to look.
+          </p>
         </div>
 
-        {/* Fields */}
-        <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_200px_210px] gap-4 items-end">
-          <div className="flex flex-col gap-2">
-            <label className="text-[11px] font-bold text-[#13293D] uppercase tracking-wider">Check In</label>
+        {/* ── Quick-pick presets — horizontally scrollable on mobile ── */}
+<div className="mb-4">
+  <span className="text-xs text-gray-500 font-medium mb-2 block">
+    Availability
+  </span>
+  <div className="relative">
+    <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1 scroll-smooth snap-x snap-mandatory">
+      {presets.map((p) => (
+        <button
+          key={p.key}
+          onClick={() => applyPreset(p)}
+          className={`shrink-0 snap-start text-sm font-semibold px-4 py-2 rounded-full border transition-all duration-150 ${
+            preset === p.key
+              ? "bg-[#C9A24B] border-[#C9A24B] text-[#0B1F2A] shadow-sm"
+              : "bg-white border-gray-200 text-gray-600 hover:border-[#C9A24B] hover:text-[#0B1F2A]"
+          }`}
+        >
+          {p.label}
+        </button>
+      ))}
+    </div>
+    {/* fade edge hints there's more content to scroll */}
+    <div className="pointer-events-none absolute right-0 top-0 bottom-1 w-8 bg-gradient-to-l from-white to-transparent" />
+  </div>
+</div>
+
+        {/* ── Date + Guest fields ── */}
+        {/* Mobile: check-in/check-out side by side, guests full row, button full row */}
+        {/* Desktop: all four in one row                                              */}
+        <div className="grid grid-cols-2 md:grid-cols-[1fr_1fr_200px_210px] gap-3 sm:gap-4 items-end">
+
+          {/* Check In */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] sm:text-[11px] font-bold text-[#13293D] uppercase tracking-wider">
+              Check In
+            </label>
             <input
               type="date"
               value={checkIn}
@@ -129,35 +114,36 @@ export default function AvailabilityWidget() {
                 const v = e.target.value;
                 setCheckIn(v);
                 if (v >= checkOut) setCheckOut(iso(addDays(new Date(v), 1)));
-                setPreset(null);
-                reset();
+                setPreset(null); reset();
               }}
-              className="border border-gray-200 rounded-[10px] px-4 py-3 text-sm text-[#13293D] bg-white focus:outline-none focus:ring-2 focus:ring-[#C9A24B]"
+              className="border border-gray-200 rounded-xl px-3 py-3 sm:px-4 text-sm text-[#13293D] bg-white focus:outline-none focus:ring-2 focus:ring-[#C9A24B] w-full"
             />
           </div>
 
-          <div className="flex flex-col gap-2">
-            <label className="text-[11px] font-bold text-[#13293D] uppercase tracking-wider">Check Out</label>
+          {/* Check Out */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] sm:text-[11px] font-bold text-[#13293D] uppercase tracking-wider">
+              Check Out
+            </label>
             <input
               type="date"
               value={checkOut}
               min={checkIn || iso(today)}
-              onChange={(e) => {
-                setCheckOut(e.target.value);
-                setPreset(null);
-                reset();
-              }}
-              className="border border-gray-200 rounded-[10px] px-4 py-3 text-sm text-[#13293D] bg-white focus:outline-none focus:ring-2 focus:ring-[#C9A24B]"
+              onChange={(e) => { setCheckOut(e.target.value); setPreset(null); reset(); }}
+              className="border border-gray-200 rounded-xl px-3 py-3 sm:px-4 text-sm text-[#13293D] bg-white focus:outline-none focus:ring-2 focus:ring-[#C9A24B] w-full"
             />
           </div>
 
-          <div className="flex flex-col gap-2">
-            <label className="text-[11px] font-bold text-[#13293D] uppercase tracking-wider">Guests</label>
-            <div className="flex items-center justify-between border border-gray-200 rounded-[10px] px-2 py-[5px]">
+          {/* Guests — full width on mobile */}
+          <div className="col-span-2 md:col-span-1 flex flex-col gap-1.5">
+            <label className="text-[10px] sm:text-[11px] font-bold text-[#13293D] uppercase tracking-wider">
+              Guests
+            </label>
+            <div className="flex items-center justify-between border border-gray-200 rounded-xl px-3 py-[10px] sm:py-[5px]">
               <button
                 aria-label="Fewer guests"
                 onClick={() => { setGuests((g) => Math.max(1, g - 1)); reset(); }}
-                className="w-[34px] h-[34px] rounded-lg bg-gray-100 text-[#0B1F2A] text-lg leading-none hover:bg-[#C9A24B] transition-colors"
+                className="w-10 h-10 sm:w-[34px] sm:h-[34px] rounded-lg bg-gray-100 text-[#0B1F2A] text-lg leading-none hover:bg-[#C9A24B] transition-colors active:scale-95"
               >
                 −
               </button>
@@ -167,25 +153,25 @@ export default function AvailabilityWidget() {
               <button
                 aria-label="More guests"
                 onClick={() => { setGuests((g) => Math.min(6, g + 1)); reset(); }}
-                className="w-[34px] h-[34px] rounded-lg bg-gray-100 text-[#0B1F2A] text-lg leading-none hover:bg-[#C9A24B] transition-colors"
+                className="w-10 h-10 sm:w-[34px] sm:h-[34px] rounded-lg bg-gray-100 text-[#0B1F2A] text-lg leading-none hover:bg-[#C9A24B] transition-colors active:scale-95"
               >
                 +
               </button>
             </div>
           </div>
 
+          {/* Search button — full width on mobile */}
           <button
             disabled={!checkIn || !checkOut || nights < 1 || availLoading}
-            onClick={() =>
-              dispatch(fetchAvailableRooms({ checkIn, checkOut, guests: String(guests) }))
-            }
-            className="bg-[#0B1F2A] text-white font-semibold text-[15px] px-5 py-3.5 rounded-[10px] tracking-wide transition-colors hover:bg-[#C9A24B] hover:text-[#0B1F2A] disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={() => dispatch(fetchAvailableRooms({ checkIn, checkOut, guests: String(guests) }))}
+            className="col-span-2 md:col-span-1 bg-[#0B1F2A] text-white font-semibold text-base sm:text-[15px] px-5 py-4 sm:py-3.5 rounded-xl tracking-wide transition-colors hover:bg-[#C9A24B] hover:text-[#0B1F2A] disabled:opacity-50 disabled:cursor-not-allowed active:scale-[.98]"
           >
             {availLoading ? "Searching…" : availableRooms ? "Search again" : "Show me rooms"}
           </button>
         </div>
 
-        <p className="text-[13px] text-gray-500 mt-3.5">
+        {/* Summary line */}
+        <p className="text-xs sm:text-[13px] text-gray-500 mt-3">
           {nights > 0
             ? `${nights} night${nights === 1 ? "" : "s"} · ${pretty(checkIn)} → ${pretty(checkOut)} · ${guests} ${guests === 1 ? "guest" : "guests"}`
             : "Choose a check-out date after your check-in to see prices."}
@@ -193,100 +179,102 @@ export default function AvailabilityWidget() {
 
         {availError && <p className="mt-4 text-sm text-red-500">{availError}</p>}
 
-        {/* Results */}
+        {/* ── Results ── */}
         {availableRooms !== null && !availLoading && (
-          <div className="mt-6 border-t border-gray-100 pt-5">
+          <div className="mt-5 sm:mt-6 border-t border-gray-100 pt-4 sm:pt-5">
             {results.length === 0 ? (
-              <div className="text-center py-6">
-                <p className="font-serif text-[19px] text-[#0B1F2A]">Nothing free for those nights</p>
-                <p className="text-[13px] text-gray-500 mt-2 mb-4">
-                  Try shifting your dates by a day, or lower the guest count — most of our rooms sleep two.
+              <div className="text-center py-6 px-2">
+                <p className="font-serif text-lg sm:text-[19px] text-[#0B1F2A]">Nothing free for those nights</p>
+                <p className="text-xs sm:text-[13px] text-gray-500 mt-2 mb-5">
+                  Try shifting your dates by a day or lowering the guest count — most rooms sleep two.
                 </p>
                 <button
                   onClick={() => {
                     setCheckIn(iso(addDays(new Date(checkIn), 1)));
                     setCheckOut(iso(addDays(new Date(checkOut), 1)));
-                    setPreset(null);
-                    reset();
+                    setPreset(null); reset();
                   }}
-                  className="text-[13px] font-semibold px-5 py-2.5 rounded-full border border-[#0B1F2A] text-[#0B1F2A] hover:bg-gray-50"
+                  className="text-sm font-semibold px-6 py-3 rounded-full border border-[#0B1F2A] text-[#0B1F2A] hover:bg-gray-50 active:scale-95"
                 >
                   Try the next night
                 </button>
               </div>
             ) : (
               <>
-                <div className="flex items-center justify-between gap-4 mb-3.5">
+                {/* Result count */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-4 mb-4">
                   <p className="text-sm font-semibold text-[#0B1F2A]">
-                    {results.length} room{results.length === 1 ? "" : "s"} free for your dates — from $
-                    {cheapest ? cheapest.discountPrice || cheapest.price : 0} a night
+                    {results.length} room{results.length === 1 ? "" : "s"} available — from $
+                    {cheapest ? cheapest.discountPrice || cheapest.price : 0}
+                    <span className="font-normal text-gray-500"> / night</span>
                   </p>
-                  <p className="text-xs text-gray-400">
-                    Tap a room to see your total. You can change dates anytime.
-                  </p>
+                  <p className="text-xs text-gray-400">Tap a room to see your total.</p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* Room cards — horizontal on mobile for easy scanning */}
+                <div className="flex flex-col gap-3">
                   {results.slice(0, 3).map((room) => {
                     const img = room.images?.[0]
                       ? (room.images[0].startsWith("http") ? room.images[0] : `${apiBase}/${room.images[0]}`)
                       : TYPE_IMAGES[room.type] || DEFAULT_IMAGE;
-                    const price    = room.discountPrice || room.price;
-                    const on       = selected === room._id;
-                    const isCheap  = cheapest && cheapest._id === room._id;
+                    const price   = room.discountPrice || room.price;
+                    const on      = selected === room._id;
+                    const isCheap = cheapest && cheapest._id === room._id;
+
                     return (
                       <button
                         key={room._id}
                         onClick={() => setSelected(on ? null : room._id)}
-                        className={`text-left flex flex-col gap-3 rounded-[14px] p-3.5 border-[1.5px] transition-all ${
+                        className={`text-left flex flex-row gap-3 rounded-2xl p-3 sm:p-3.5 border-[1.5px] transition-all active:scale-[.99] ${
                           on
                             ? "bg-[#FBF8F1] border-[#C9A24B] shadow-[0_8px_20px_-6px_rgba(201,162,75,.45)]"
                             : "bg-white border-gray-100 hover:border-[#C9A24B]/40"
                         }`}
                       >
-                        <div className="flex gap-3">
-                          <img
-                            src={img}
-                            alt=""
-                            className="w-[84px] h-[84px] rounded-[10px] object-cover shrink-0"
-                          />
-                          <div className="min-w-0 flex flex-col gap-1">
+                        {/* Image */}
+                        <img
+                          src={img}
+                          alt=""
+                          className="w-24 h-24 sm:w-[84px] sm:h-[84px] rounded-xl object-cover shrink-0"
+                        />
+
+                        {/* Info */}
+                        <div className="flex-1 min-w-0 flex flex-col justify-between">
+                          <div>
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <p className="font-bold text-[#0B1F2A] text-sm">Room {room.roomNumber}</p>
-                              <span
-                                className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${
-                                  isCheap ? "bg-[#C9A24B] text-[#0B1F2A]" : "bg-gray-100 text-gray-500"
-                                }`}
-                              >
-                                {isCheap ? "Recommended" : "Available"}
+                              <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${
+                                isCheap ? "bg-[#C9A24B] text-[#0B1F2A]" : "bg-gray-100 text-gray-500"
+                              }`}>
+                                {isCheap ? "Best value" : "Available"}
                               </span>
                             </div>
-                            <p className="text-xs text-gray-500 capitalize">
+                            <p className="text-xs text-gray-500 capitalize mt-0.5">
                               {room.type} · sleeps {room.capacity}
                             </p>
                             {room.amenities?.length > 0 && (
-                              <p className="text-xs text-gray-400 truncate">
+                              <p className="text-xs text-gray-400 truncate mt-0.5">
                                 {room.amenities.slice(0, 3).join(" · ")}
                               </p>
                             )}
                           </div>
-                        </div>
-                        <div className="flex items-end justify-between gap-2 border-t border-gray-100 pt-2.5">
-                          <div>
-                            <p className="text-[15px] font-bold text-[#0B1F2A]">
-                              ${(price * nights).toLocaleString()} total
-                            </p>
-                            <p className="text-[11px] text-gray-400 mt-0.5">
-                              ${price} × {nights} night{nights === 1 ? "" : "s"}
-                            </p>
-                          </div>
-                          <span
-                            className={`text-xs font-semibold px-3.5 py-2 rounded-full ${
+
+                          {/* Price + CTA */}
+                          <div className="flex items-end justify-between gap-2 mt-2">
+                            <div>
+                              <p className="text-[15px] font-bold text-[#0B1F2A] leading-tight">
+                                ${(price * nights).toLocaleString()}
+                              </p>
+                              <p className="text-[11px] text-gray-400">
+                                ${price} × {nights} night{nights === 1 ? "" : "s"}
+                              </p>
+                            </div>
+                            <span className={`text-xs font-semibold px-3 py-1.5 rounded-full ${
                               on ? "bg-[#0B1F2A] text-white" : "bg-gray-100 text-[#0B1F2A]"
-                            }`}
-                          >
-                            {on ? "Selected ✓" : "Choose"}
-                          </span>
+                            }`}>
+                              {on ? "Selected ✓" : "Choose"}
+                            </span>
+                          </div>
                         </div>
                       </button>
                     );
@@ -294,53 +282,58 @@ export default function AvailabilityWidget() {
                 </div>
 
                 {results.length > 3 && (
-                  <p className="text-center mt-3.5">
+                  <p className="text-center mt-4">
                     <Link
                       to="/rooms"
-                      className="text-[13px] font-semibold text-[#0B1F2A] border-b border-[#C9A24B]"
+                      className="text-sm font-semibold text-[#0B1F2A] border-b border-[#C9A24B]"
                     >
                       View all {results.length} available rooms →
                     </Link>
                   </p>
                 )}
 
-                {/* Confirm strip */}
+                {/* ── Confirm strip ── */}
                 {selectedRoom && (
                   <>
-                    <div className="mt-5 rounded-[14px] bg-[#0B1F2A] px-6 py-5 flex items-center justify-between gap-6 flex-wrap">
-                      <div>
-                        <p className="text-[11px] uppercase tracking-[0.18em] text-[#C9A24B] mb-1.5">
-                          Step 3 of 3 — you're nearly there
-                        </p>
-                        <p className="font-serif text-xl text-white capitalize">
-                          Room {selectedRoom.roomNumber} · {selectedRoom.type}
-                        </p>
-                        <p className="text-[13px] text-gray-400 mt-1.5">
-                          {pretty(checkIn)} → {pretty(checkOut)} · {nights} night{nights === 1 ? "" : "s"} ·{" "}
-                          {guests} {guests === 1 ? "guest" : "guests"}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-6">
-                        <div className="text-right">
+                    <div className="mt-5 rounded-2xl bg-[#0B1F2A] px-4 sm:px-6 py-5">
+                      {/* Badge */}
+                      <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.18em] text-[#C9A24B] mb-2">
+                        Almost there — review &amp; continue
+                      </p>
+
+                      {/* Room + dates */}
+                      <p className="font-serif text-lg sm:text-xl text-white capitalize">
+                        Room {selectedRoom.roomNumber} · {selectedRoom.type}
+                      </p>
+                      <p className="text-xs sm:text-[13px] text-gray-400 mt-1">
+                        {pretty(checkIn)} → {pretty(checkOut)} · {nights} night{nights === 1 ? "" : "s"} · {guests} {guests === 1 ? "guest" : "guests"}
+                      </p>
+
+                      {/* Price + CTA — stacked on mobile, side by side on desktop */}
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-4">
+                        <div>
                           <p className="text-[11px] text-gray-400 uppercase tracking-widest">Total</p>
-                          <p className="font-serif text-[28px] text-[#C9A24B] mt-0.5">
+                          <p className="font-serif text-3xl sm:text-[28px] text-[#C9A24B] mt-0.5">
                             ${(selectedPrice * nights).toLocaleString()}
                           </p>
                           <p className="text-[11px] text-gray-500 mt-0.5">Taxes shown before you pay</p>
                         </div>
+
                         <Link
                           to={`/booking?room=${selectedRoom._id}&checkIn=${checkIn}&checkOut=${checkOut}`}
-                          className="bg-[#C9A24B] text-[#0B1F2A] font-bold text-[15px] px-7 py-4 rounded-full whitespace-nowrap hover:bg-white transition-colors"
+                          className="w-full sm:w-auto text-center bg-[#C9A24B] text-[#0B1F2A] font-bold text-base px-7 py-4 rounded-full whitespace-nowrap hover:bg-white transition-colors active:scale-[.98]"
                         >
                           Continue to booking →
                         </Link>
                       </div>
                     </div>
-                    <p className="text-xs text-gray-500 mt-3 text-center">
-                      You'll sign in on the next step — nothing is charged yet. Free cancellation up to 48 hours
-                      before arrival. Questions? Call{" "}
-                      <span className="text-[#0B1F2A] font-semibold">+1 (234) 567-8900</span>.
-                    </p>
+
+                    <p className="text-xs text-gray-500 mt-3 text-center leading-relaxed">
+                      You'll sign in on the next step — nothing is charged yet.{" "}
+                      Free cancellation up to 48 hours before arrival.{" "}
+                      Questions?{" "}
+                      <span className="text-[#0B1F2A] font-semibold whitespace-nowrap">+1 (234) 567-8900</span>
+n                      </p>
                   </>
                 )}
               </>

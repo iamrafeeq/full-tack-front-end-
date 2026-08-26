@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchMessages, deleteMessage, clearDeleteError } from "../../redux/slice/contactUs/contactusSlice";
 import ReceptionistLayout from "../../components/receptionist/ReceptionistLayout";
+import { notifySuccess, notifyError } from "../../utils/toast";
 
 export default function ReceptionMessages() {
   const dispatch = useDispatch();
@@ -13,9 +14,14 @@ export default function ReceptionMessages() {
   }, [dispatch]);
 
   useEffect(() => {
+    if (!fetchError) return;
+    notifyError(fetchError);
+  }, [fetchError]);
+
+  useEffect(() => {
     if (!deleteError) return;
-    const t = setTimeout(() => dispatch(clearDeleteError()), 4000);
-    return () => clearTimeout(t);
+    notifyError(deleteError);
+    dispatch(clearDeleteError());
   }, [deleteError, dispatch]);
 
   return (
@@ -37,14 +43,6 @@ export default function ReceptionMessages() {
             <span>↻</span> Refresh
           </button>
         </div>
-
-        {/* Error banners */}
-        {fetchError && (
-          <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{fetchError}</p>
-        )}
-        {deleteError && (
-          <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{deleteError}</p>
-        )}
 
         {/* Loading skeleton */}
         {fetchLoading && (
@@ -100,7 +98,7 @@ export default function ReceptionMessages() {
 
             {/* Delete button — receptionist can view but not delete; only admin can */}
             <button
-              onClick={() => dispatch(deleteMessage(msg._id))}
+              onClick={() => dispatch(deleteMessage(msg._id)).then((r) => { if (!r.error) notifySuccess("Message deleted."); })}
               disabled={deleteLoading === msg._id}
               className="shrink-0 self-start px-3 py-1.5 rounded-lg border border-red-200 text-red-600 text-xs hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >

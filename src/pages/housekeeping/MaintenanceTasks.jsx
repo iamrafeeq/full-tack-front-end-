@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import HousekeepingLayout from "../../components/housekeeping/HousekeepingLayout";
+import SkeletonRow from "../../components/SkeletonRow";
 import {
   fetchMyTasks,
   updateMaintenanceStatus,
 } from "../../redux/slice/maintenance/maintenanceSlice";
+import { notifyError } from "../../utils/toast";
 
 const STATUS_BADGE = {
   open:          "bg-red-100 text-red-700",
@@ -35,6 +37,8 @@ export default function MaintenanceTasks() {
     dispatch(fetchMyTasks(filter));
   }, [dispatch, filter]);
 
+  useEffect(() => { if (updateError) notifyError(updateError); }, [updateError]);
+
   return (
     <HousekeepingLayout title="Maintenance Tasks">
       <div className="max-w-5xl">
@@ -43,13 +47,6 @@ export default function MaintenanceTasks() {
           <h1 className="text-2xl font-serif text-[#0B1F2A]">My Maintenance Tasks</h1>
           <p className="text-sm text-gray-500 mt-1">Tasks assigned to you by the admin team.</p>
         </div>
-
-        {/* Error banner */}
-        {updateError && (
-          <div className="mb-4 rounded-lg bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-700">
-            {updateError}
-          </div>
-        )}
 
         {/* Filter pills + count */}
         <div className="flex flex-wrap items-center gap-2 mb-5">
@@ -81,11 +78,7 @@ export default function MaintenanceTasks() {
 
         {/* Table card */}
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-          {myTasksLoading ? (
-            <div className="flex justify-center py-16">
-              <div className="w-8 h-8 border-4 border-gray-200 border-t-[#C9A24B] rounded-full animate-spin" />
-            </div>
-          ) : myTasksError ? (
+          {myTasksError ? (
             <div className="m-5 rounded-lg bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-700">
               {myTasksError}
               <button
@@ -94,14 +87,6 @@ export default function MaintenanceTasks() {
               >
                 Retry
               </button>
-            </div>
-          ) : myTasks.length === 0 ? (
-            <div className="py-20 flex flex-col items-center gap-3 text-center">
-              <span className="text-4xl">🔧</span>
-              <p className="font-medium text-gray-700">No tasks found</p>
-              <p className="text-sm text-gray-400">
-                {filter ? `No ${filter} tasks assigned to you` : "You have no maintenance tasks right now"}
-              </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -119,7 +104,19 @@ export default function MaintenanceTasks() {
                   </tr>
                 </thead>
                 <tbody>
-                  {myTasks.map((task) => (
+                  {myTasksLoading ? Array.from({length: 5}, (_, i) => <SkeletonRow key={i} cols={6} />) : myTasks.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="py-20 text-center">
+                        <div className="flex flex-col items-center gap-3">
+                          <span className="text-4xl">🔧</span>
+                          <p className="font-medium text-gray-700">No tasks found</p>
+                          <p className="text-sm text-gray-400">
+                            {filter ? `No ${filter} tasks assigned to you` : "You have no maintenance tasks right now"}
+                          </p>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : myTasks.map((task) => (
                     <tr
                       key={task._id}
                       className="border-b border-gray-50 hover:bg-gray-50/60 transition-colors"

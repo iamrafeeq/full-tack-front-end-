@@ -4,6 +4,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchAllRooms } from "../../redux/slice/roomSlice/roomSlice";
 import { fetchRoomFeedback } from "../../redux/slice/feedback/feedbackSlice";
 import { apiBase } from "../../api/axios";
+import { notifyError } from "../../utils/toast";
+import SkeletonCard from "../../components/SkeletonCard";
 
 // Fallback image per room type (rooms in DB don't have image fields)
 const TYPE_IMAGES = {
@@ -29,6 +31,8 @@ function Rooms() {
   useEffect(() => {
     dispatch(fetchAllRooms());
   }, [dispatch]);
+
+  useEffect(() => { if (error) notifyError(error); }, [error]);
 
   // Fetch ratings for every room once the room list is loaded
   useEffect(() => {
@@ -132,31 +136,17 @@ function Rooms() {
           {/* Loading */}
           {loading && (
             <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="rounded-2xl bg-white shadow-md overflow-hidden animate-pulse">
-                  <div className="h-56 bg-gray-200" />
-                  <div className="p-6 space-y-3">
-                    <div className="h-5 bg-gray-200 rounded w-3/4" />
-                    <div className="h-4 bg-gray-100 rounded w-1/2" />
-                    <div className="h-4 bg-gray-100 rounded w-1/3" />
-                  </div>
-                </div>
-              ))}
+              {Array.from({length: 3}, (_, i) => <SkeletonCard key={i} hasImage={true} />)}
             </div>
           )}
 
-          {/* Error */}
-          {error && (
-            <p className="text-center text-red-500 py-12">{error}</p>
-          )}
-
           {/* Empty */}
-          {!loading && !error && filtered.length === 0 && (
+          {!loading && filtered.length === 0 && (
             <p className="text-center text-gray-500 py-12">No rooms match your filters.</p>
           )}
 
           {/* Cards */}
-          {!loading && !error && filtered.length > 0 && (
+          {!loading && filtered.length > 0 && (
             <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
               {filtered.map((room) => {
                 // Use first uploaded image if available, otherwise fall back to type placeholder

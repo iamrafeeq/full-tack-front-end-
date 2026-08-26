@@ -12,9 +12,12 @@ import {
 } from "../../redux/slice/maintenance/maintenanceSlice";
 import { fetchPublicRooms } from "../../redux/slice/roomSlice/roomSlice";
 import {
-  StatCard, TableCard, Th, Badge, Pills, Spinner, ErrorBanner, SuccessBanner,
+  StatCard, TableCard, Th, Badge, Pills, ErrorBanner,
   EmptyState, Modal, btn, input, label, fmtDate,
 } from "../admin/AdminUI";
+import Spinner from "../Spinner";
+import SkeletonRow from "../SkeletonRow";
+import { notifySuccess, notifyError } from "../../utils/toast";
 
 const TABS = [
   { value: "", label: "All" },
@@ -52,14 +55,19 @@ export default function Maintenance() {
     dispatch(fetchMaintenanceRequests(statusTab));
   }, [dispatch, statusTab]);
 
-  // Clear the success banner after 3s and refresh the list
   useEffect(() => {
     if (!reportSuccess) return;
+    notifySuccess("Issue reported. The team has been notified.");
     setForm({ room: "", issue: "" });
     dispatch(fetchMaintenanceRequests(statusTab));
-    const id = setTimeout(() => dispatch(clearReportState()), 3000);
-    return () => clearTimeout(id);
+    dispatch(clearReportState());
   }, [reportSuccess, dispatch, statusTab]);
+
+  useEffect(() => { if (reportError) notifyError(reportError); }, [reportError]);
+  useEffect(() => { if (updateError) notifyError(updateError); }, [updateError]);
+  useEffect(() => { if (assignError) notifyError(assignError); }, [assignError]);
+  useEffect(() => { if (deleteError) notifyError(deleteError); }, [deleteError]);
+  useEffect(() => { if (error) notifyError(error); }, [error]);
 
   const submit = (e) => {
     e.preventDefault();
@@ -88,9 +96,6 @@ export default function Maintenance() {
           <p className="text-[13px] text-gray-500 mt-1.5 mb-5">
             Housekeeping and reception see it the moment you submit.
           </p>
-
-          <SuccessBanner>{reportSuccess ? "Issue reported. The team has been notified." : null}</SuccessBanner>
-          <ErrorBanner>{reportError}</ErrorBanner>
 
           <form onSubmit={submit} className="space-y-4">
             <div>
@@ -122,8 +127,8 @@ export default function Maintenance() {
               />
             </div>
 
-            <button type="submit" disabled={reportLoading} className={`${btn.primary} w-full`}>
-              {reportLoading ? "Submitting…" : "Submit Request"}
+            <button type="submit" disabled={reportLoading} className={`inline-flex items-center gap-1.5 justify-center ${btn.primary} w-full`}>
+              {reportLoading ? <><Spinner size="sm" color="white" /> Submitting…</> : "Submit Request"}
             </button>
           </form>
         </div>
@@ -137,25 +142,17 @@ export default function Maintenance() {
             </span>
           </div>
 
-          <ErrorBanner>{updateError || assignError || deleteError}</ErrorBanner>
-
-          {loading && <Spinner />}
-          {!loading && error && (
-            <ErrorBanner onRetry={() => dispatch(fetchMaintenanceRequests(statusTab))}>{error}</ErrorBanner>
-          )}
-
-          {!loading && !error && (
-            <TableCard>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-gray-100 text-left">
-                    {["Room", "Issue", "Status", "Reported by", "Assigned to", "Reported", "Actions"].map((h) => (
-                      <Th key={h}>{h}</Th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {requests.length === 0 ? (
+          <TableCard>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-100 text-left">
+                  {["Room", "Issue", "Status", "Reported by", "Assigned to", "Reported", "Actions"].map((h) => (
+                    <Th key={h}>{h}</Th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? Array.from({length: 5}, (_, i) => <SkeletonRow key={i} cols={7} />) : requests.length === 0 ? (
                     <tr>
                       <td colSpan={7}>
                         <EmptyState icon="🔧" title="Nothing to fix" subtitle="No maintenance requests for this filter." />
@@ -194,19 +191,19 @@ export default function Maintenance() {
                             <button
                               onClick={() => { setAssignTarget(r); setAssignee(r.assignedTo?._id || ""); }}
                               disabled={assignLoading === r._id}
-                              className={btn.ghostGold}
+                              className={`inline-flex items-center gap-1.5 justify-center ${btn.ghostGold}`}
                             >
-                              {r.assignedTo ? "Reassign" : "Assign"}
+                              {assignLoading === r._id ? <><Spinner size="sm" color="#C9A24B" /> {r.assignedTo ? "Reassigning…" : "Assigning…"}</> : (r.assignedTo ? "Reassign" : "Assign")}
                             </button>
                             {r.status === "resolved" && (
                               deleteConfirmId === r._id ? (
                                 <span className="flex items-center gap-1">
                                   <button
-                                    onClick={() => dispatch(deleteMaintenance(r._id)).then((res) => { if (!res.error) setDeleteConfirmId(null); })}
+                                    onClick={() => dispatch(deleteMaintenance(r._id)).then((res) => { if (!res.error) { notifySuccess("Request deleted."); setDeleteConfirmId(null); } })}
                                     disabled={deleteLoading === r._id}
-                                    className="text-xs px-2.5 py-1 rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-60 transition-colors"
+                                    className="inline-flex items-center gap-1.5 justify-center text-xs px-2.5 py-1 rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-60 transition-colors"
                                   >
-                                    {deleteLoading === r._id ? "…" : "Yes"}
+                                    {deleteLoading === r._id ? <><Spinner size="sm" color="white" /> Yes</> : "Yes"}
                                   </button>
                                   <button
                                     onClick={() => setDeleteConfirmId(null)}
@@ -232,7 +229,6 @@ export default function Maintenance() {
                 </tbody>
               </table>
             </TableCard>
-          )}
         </div>
       </div>
 
@@ -250,9 +246,9 @@ export default function Maintenance() {
                   )
                 }
                 disabled={!assignee || assignLoading === assignTarget._id}
-                className={btn.primary}
+                className={`inline-flex items-center gap-1.5 justify-center ${btn.primary}`}
               >
-                {assignLoading === assignTarget._id ? "Assigning…" : "Assign"}
+                {assignLoading === assignTarget._id ? <><Spinner size="sm" color="white" /> Assigning…</> : "Assign"}
               </button>
             </>
           }
