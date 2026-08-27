@@ -88,15 +88,15 @@ export default function RoomFormModal({ editRoom, onClose, onSuccess }) {
   const [previews, setPreviews] = useState([]);    // Object URLs for thumbnail preview
   const fileInputRef = useRef(null);
 
+  const isEditing = !!editRoom;
+  const loading   = isEditing ? updateLoading : createLoading;
+  const apiError  = isEditing ? updateError   : createError;
+
   useEffect(() => { dispatch(clearFormErrors()); }, [dispatch]);
   useEffect(() => { if (apiError) notifyError(apiError); }, [apiError]);
 
   // Revoke object URLs when previews change or component unmounts
   useEffect(() => () => previews.forEach(URL.revokeObjectURL), [previews]);
-
-  const isEditing = !!editRoom;
-  const loading   = isEditing ? updateLoading : createLoading;
-  const apiError  = isEditing ? updateError   : createError;
 
   // ── Validation ─────────────────────────────────────────────────────────────
   const validate = () => {

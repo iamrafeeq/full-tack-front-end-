@@ -101,14 +101,39 @@ export const validCNIC = (value) => {
   // accepts either format: with hyphens (12345-1234567-1) or without (1234512345671)
   const digitsOnly = trimmed.replace(/-/g, "");
 
-  if (!/^\d{14}$/.test(digitsOnly))
-    return "CNIC must contain exactly 14 digits.";
+  // CNIC is 13 digits total: 5 (family number) + 7 (serial) + 1 (gender/check digit)
+  if (!/^\d{13}$/.test(digitsOnly))
+    return "CNIC must contain exactly 13 digits.";
 
   // if hyphens are present, they must be in the correct positions
   if (trimmed.includes("-")) {
     if (!/^\d{5}-\d{7}-\d{1}$/.test(trimmed))
       return "CNIC format should be 12345-1234567-1.";
   }
+
+  // reject all-zero CNIC (00000-0000000-0)
+  if (/^0{13}$/.test(digitsOnly))
+    return "CNIC cannot be all zeros.";
+
+  // reject all-same-digit CNIC (e.g. 1111111111111, 9999999999999)
+  if (/^(\d)\1{12}$/.test(digitsOnly))
+    return "Please enter a valid CNIC.";
+
+  // reject fully sequential digits (e.g. 1234567890123 or reverse)
+  const ascending = "01234567890123";
+  const descending = "32109876543210";
+  if (ascending.includes(digitsOnly) || descending.includes(digitsOnly))
+    return "Please enter a valid CNIC.";
+
+  // reject family number (first 5 digits) being all zeros — not a real region code
+  const familyCode = digitsOnly.slice(0, 5);
+  if (/^0{5}$/.test(familyCode))
+    return "Please enter a valid CNIC.";
+
+  // reject last digit being invalid (gender digit must be 1-9, 0 doesn't exist)
+  const lastDigit = digitsOnly.slice(-1);
+  if (lastDigit === "0")
+    return "Please enter a valid CNIC.";
 
   return; // valid
 };

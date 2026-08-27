@@ -20,6 +20,7 @@ import tableReservationsReducer  from './slice/tableReservations/tableReservatio
 import eventHallsReducer         from './slice/eventHalls/eventHallSlice';
 import eventHallBookingsReducer  from './slice/eventHallBookings/eventHallBookingSlice';
 import passwordResetReducer      from './slice/auth/passwordResetSlice';
+import changePasswordReducer     from './slice/auth/changePasswordSlice';
 
 export const store = configureStore({
   reducer: {
@@ -44,5 +45,6 @@ export const store = configureStore({
     eventHalls:         eventHallsReducer,
     eventHallBookings:  eventHallBookingsReducer,
     passwordReset:      passwordResetReducer,
+    changePassword:     changePasswordReducer,
   },
 });
