@@ -11,6 +11,10 @@ import { fetchRoomFeedback } from "../../redux/slice/feedback/feedbackSlice";
 import { useAuth } from "../../context/AuthContext";
 import StripeCheckoutForm from "../../components/payment/StripeCheckoutForm";
 import Spinner from "../../components/Spinner";
+import {
+  FiCheckCircle, FiCalendar, FiMoon, FiCreditCard,
+  FiHome, FiList, FiLock,
+} from "react-icons/fi";
 
 // Initialise Stripe once at module level (outside component to avoid recreating the Promise)
 const stripePromise = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
@@ -94,9 +98,10 @@ function Booking() {
     paymentTiming: "now",
   });
 
-  // 'form' → booking form, 'payment' → Stripe card form, 'done' → success screen
+  // 'form' → booking form, 'payment' → Stripe card form, 'done' → success overlay
   const [step, setStep]               = useState("form");
-  const [paymentInfo, setPaymentInfo] = useState(null); // { bookingId, clientSecret }
+  const [paymentInfo, setPaymentInfo] = useState(null);     // { bookingId, clientSecret }
+  const [confirmedBooking, setConfirmedBooking] = useState(null); // full booking payload
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -142,9 +147,9 @@ function Booking() {
       if (result.error) return;
 
       const bookingId = result.payload?.booking?._id;
+      setConfirmedBooking(result.payload?.booking ?? null);
 
       if (form.paymentTiming === "now" && bookingId) {
-        // Kick off payment intent then show the Stripe form
         dispatch(createPaymentIntent({ bookingId })).then((intentResult) => {
           if (!intentResult.error) {
             setPaymentInfo({ bookingId, clientSecret: intentResult.payload.clientSecret });
@@ -152,47 +157,12 @@ function Booking() {
           }
         });
       } else {
-        // checkin / checkout — no card needed right now
         setStep("done");
       }
     });
   };
 
-  // ── Success screen ────────────────────────────────────────────────────────
-  if (step === "done") {
-    return (
-      <div className="flex min-h-[70vh] flex-col items-center justify-center bg-white px-6 text-center">
-        <div className="text-6xl">🎉</div>
-        <h1 className="mt-6 font-serif text-3xl text-[#0B1F2A]">Booking Confirmed!</h1>
-        <p className="mt-3 max-w-md text-gray-500">
-          Your reservation has been successfully created.{" "}
-          {selectedRoom && (
-            <>Room {selectedRoom.roomNumber} is reserved from {form.checkIn} to {form.checkOut}.</>
-          )}{" "}
-          {paymentInfo
-            ? "Your payment has been processed."
-            : "Payment will be collected at the hotel."}{" "}
-          We look forward to hosting you.
-        </p>
-        <div className="mt-8 flex flex-wrap justify-center gap-4">
-          <Link
-            to="/my-bookings"
-            className="rounded-full bg-[#C9A24B] px-8 py-3 font-medium text-[#0B1F2A] transition hover:opacity-90"
-          >
-            View My Bookings
-          </Link>
-          <Link
-            to="/"
-            className="rounded-full border border-[#0B1F2A] px-8 py-3 font-medium text-[#0B1F2A] transition hover:bg-[#0B1F2A] hover:text-white"
-          >
-            Back to Home
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  // ── Shared page shell (form + payment steps both use this layout) ─────────
+  // ── Shared page shell — confirmation overlay is rendered inside the return ──
   return (
     <div className="bg-white text-[#1F2937]">
       {/* Hero */}
@@ -450,7 +420,7 @@ function Booking() {
                     {/* Pay now — Stripe badge */}
                     {form.paymentTiming === "now" && (
                       <div className="mt-4 flex items-center gap-3 rounded-xl border border-[#C9A24B]/30 bg-[#C9A24B]/5 px-4 py-3">
-                        <span className="text-lg">💳</span>
+                        <FiLock className="text-[#C9A24B] shrink-0" size={18} />
                         <div>
                           <p className="text-sm font-medium text-[#0B1F2A]">Secure online payment via Stripe</p>
                           <p className="text-xs text-gray-400 mt-0.5">Card details collected on the next step · SSL encrypted</p>
@@ -556,6 +526,125 @@ function Booking() {
 
         </div>
       </section>
+
+      {/* ── Booking confirmation modal ──────────────────────────────────── */}
+      {step === "done" && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-[#0B1F2A]/80 backdrop-blur-sm" />
+
+          {/* Modal card */}
+          <div className="relative w-full max-w-md rounded-2xl bg-white shadow-2xl overflow-hidden">
+
+            {/* Top accent bar */}
+            <div className="h-1.5 bg-gradient-to-r from-[#C9A24B] via-[#e4c07a] to-[#C9A24B]" />
+
+            <div className="px-8 pt-8 pb-6">
+              {/* Icon + title */}
+              <div className="flex flex-col items-center text-center mb-6">
+                <div className="w-16 h-16 rounded-full bg-green-50 border-2 border-green-200 flex items-center justify-center mb-4">
+                  <FiCheckCircle className="text-green-500" size={32} />
+                </div>
+                <h2 className="font-serif text-2xl text-[#0B1F2A] leading-tight">Booking Confirmed</h2>
+                <p className="mt-1.5 text-sm text-gray-400">
+                  Your reservation has been successfully created
+                </p>
+                {confirmedBooking?._id && (
+                  <div className="mt-3 rounded-full bg-gray-100 px-4 py-1 text-xs font-mono text-gray-500 tracking-wide">
+                    Ref #{confirmedBooking._id.slice(-8).toUpperCase()}
+                  </div>
+                )}
+              </div>
+
+              {/* Booking details grid */}
+              <div className="rounded-xl border border-gray-100 bg-gray-50 divide-y divide-gray-100">
+                <div className="flex items-center gap-3 px-4 py-3">
+                  <FiHome className="text-[#C9A24B] shrink-0" size={15} />
+                  <span className="text-xs text-gray-400 w-20 shrink-0">Room</span>
+                  <span className="text-sm font-medium text-[#0B1F2A] capitalize ml-auto text-right">
+                    {selectedRoom
+                      ? `${selectedRoom.roomNumber} — ${selectedRoom.type}`
+                      : "—"}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3 px-4 py-3">
+                  <FiCalendar className="text-[#C9A24B] shrink-0" size={15} />
+                  <span className="text-xs text-gray-400 w-20 shrink-0">Check-in</span>
+                  <span className="text-sm font-medium text-[#0B1F2A] ml-auto">
+                    {form.checkIn
+                      ? new Date(form.checkIn + "T12:00:00").toLocaleDateString("en-GB", {
+                          day: "2-digit", month: "short", year: "numeric",
+                        })
+                      : "—"}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3 px-4 py-3">
+                  <FiCalendar className="text-[#C9A24B] shrink-0" size={15} />
+                  <span className="text-xs text-gray-400 w-20 shrink-0">Check-out</span>
+                  <span className="text-sm font-medium text-[#0B1F2A] ml-auto">
+                    {form.checkOut
+                      ? new Date(form.checkOut + "T12:00:00").toLocaleDateString("en-GB", {
+                          day: "2-digit", month: "short", year: "numeric",
+                        })
+                      : "—"}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3 px-4 py-3">
+                  <FiMoon className="text-[#C9A24B] shrink-0" size={15} />
+                  <span className="text-xs text-gray-400 w-20 shrink-0">Nights</span>
+                  <span className="text-sm font-medium text-[#0B1F2A] ml-auto">{nights}</span>
+                </div>
+
+                <div className="flex items-center gap-3 px-4 py-3">
+                  <FiCreditCard className="text-[#C9A24B] shrink-0" size={15} />
+                  <span className="text-xs text-gray-400 w-20 shrink-0">Payment</span>
+                  <span className="ml-auto">
+                    {paymentInfo ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700">
+                        <FiCheckCircle size={11} /> Paid
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-700">
+                        Pay at hotel
+                      </span>
+                    )}
+                  </span>
+                </div>
+
+                {total > 0 && (
+                  <div className="flex items-center gap-3 px-4 py-3">
+                    <span className="text-xs text-gray-400 w-20 shrink-0 pl-[23px]">Total</span>
+                    <span className="font-serif text-lg font-semibold text-[#0B1F2A] ml-auto">
+                      ${total.toLocaleString()}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Action buttons */}
+              <div className="mt-6 flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={() => navigate("/my-bookings")}
+                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-[#C9A24B] py-3 px-5 text-sm font-medium text-[#0B1F2A] transition hover:opacity-90"
+                >
+                  <FiList size={15} />
+                  View My Bookings
+                </button>
+                <button
+                  onClick={() => navigate("/")}
+                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-full border border-gray-200 py-3 px-5 text-sm font-medium text-gray-600 transition hover:border-[#0B1F2A] hover:text-[#0B1F2A]"
+                >
+                  <FiHome size={15} />
+                  Go to Home
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

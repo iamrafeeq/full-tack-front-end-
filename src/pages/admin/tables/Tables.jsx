@@ -35,12 +35,12 @@ function TableFormModal({ editTable, onClose, onSuccess }) {
   );
   const [errs, setErrs] = useState({});
 
-  useEffect(() => { dispatch(clearFormErrors()); }, [dispatch]);
-  useEffect(() => { if (apiError) notifyError(apiError); }, [apiError]);
-
   const isEditing = !!editTable;
   const loading   = isEditing ? updateLoading : createLoading;
   const apiError  = isEditing ? updateError   : createError;
+
+  useEffect(() => { dispatch(clearFormErrors()); }, [dispatch]);
+  useEffect(() => { if (apiError) notifyError(apiError); }, [apiError]);
 
   const validate = () => {
     const e = {};
