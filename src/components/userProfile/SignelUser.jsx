@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { getSingleUser } from "../../redux/slice/auth/loginAuthSlice";
 import { editProfile } from "../../redux/slice/auth/registerAuthSlice";
 import { changePassword, clearChangePassword } from "../../redux/slice/auth/changePasswordSlice";
+import { deleteAccount, clearDeleteAccount } from "../../redux/slice/auth/deleteAccountSlice";
 import { useAuth } from "../../context/AuthContext";
 import {
   required, validName, validPhone, validNationality,
@@ -10,6 +11,7 @@ import {
 } from "../../utils/validators";
 import Spinner from "../Spinner";
 import { notifySuccess, notifyError } from "../../utils/toast";
+import { FiAlertTriangle, FiTrash2 } from "react-icons/fi";
 
 const ROLE_LABELS = {
   user: "Guest", admin: "Admin", manager: "Manager",
@@ -30,11 +32,12 @@ const EyeIcon = ({ open }) =>
 
 export default function Profile() {
   const dispatch = useDispatch();
-  const { user: authUser } = useAuth();
+  const { user: authUser, logout } = useAuth();
 
   const { singleUser, singleUserLoading, singleUserError } = useSelector((s) => s.login);
   const { updateLoading, updateError }                     = useSelector((s) => s.auth);
   const { loading: pwLoading, error: pwError, success: pwSuccess } = useSelector((s) => s.changePassword);
+  const { loading: delLoading, error: delError, success: delSuccess } = useSelector((s) => s.deleteAccount);
 
   // ── profile edit state ─────────────────────────────────────────────
   const [isEditing,  setIsEditing]  = useState(false);
@@ -47,9 +50,20 @@ export default function Profile() {
   const [pwShow,  setPwShow]  = useState({ currentPassword: false, newPassword: false, confirmPassword: false });
   const [pwErrors, setPwErrors] = useState({});
 
+  // ── delete-account state ───────────────────────────────────────────
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
   // ── effects ────────────────────────────────────────────────────────
   useEffect(() => { if (updateError) notifyError(updateError); }, [updateError]);
   useEffect(() => { if (pwError)     notifyError(pwError);     }, [pwError]);
+  useEffect(() => { if (delError)    notifyError(delError);    }, [delError]);
+
+  useEffect(() => {
+    if (delSuccess) {
+      dispatch(clearDeleteAccount());
+      logout();
+    }
+  }, [delSuccess, dispatch, logout]);
 
   useEffect(() => {
     if (pwSuccess) {
@@ -175,6 +189,10 @@ export default function Profile() {
       return;
     }
     dispatch(changePassword({ currentPassword: pwForm.currentPassword, newPassword: pwForm.newPassword }));
+  };
+
+  const handleDeleteAccount = () => {
+    dispatch(deleteAccount());
   };
 
   // ── shared styles ──────────────────────────────────────────────────
@@ -331,6 +349,28 @@ export default function Profile() {
           </div>
         </div>
 
+        {/* ── Danger Zone card ── */}
+        <div className="bg-white rounded-2xl shadow-md overflow-hidden border border-red-100">
+          <div className="px-5 sm:px-6 pt-5 pb-4">
+            <div className="flex items-center gap-2 mb-1">
+              <FiAlertTriangle className="text-red-500 shrink-0" size={15} />
+              <h2 className="text-xs font-bold uppercase tracking-widest text-red-500">Danger Zone</h2>
+            </div>
+            <p className="text-sm text-gray-500 mt-1 leading-relaxed">
+              Permanently delete your account and all associated data — bookings, reservations, invoices, and payments. This action cannot be undone.
+            </p>
+          </div>
+          <div className="px-5 sm:px-6 py-4 border-t border-red-50">
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="inline-flex items-center gap-2 text-sm font-semibold text-red-600 border border-red-200 px-5 py-2.5 rounded-xl hover:bg-red-50 transition-colors active:scale-[.98]"
+            >
+              <FiTrash2 size={15} />
+              Delete My Account
+            </button>
+          </div>
+        </div>
+
         {/* ── Change Password card (visible when isChangingPw) ── */}
         {isChangingPw && (
           <div className="bg-white rounded-2xl shadow-md overflow-hidden">
@@ -440,6 +480,72 @@ export default function Profile() {
         )}
 
       </div>
+
+      {/* ── Delete account confirmation modal ── */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-[#0B1F2A]/75 backdrop-blur-sm" onClick={() => !delLoading && setShowDeleteConfirm(false)} />
+          <div className="relative w-full max-w-sm bg-white rounded-2xl shadow-2xl overflow-hidden">
+
+            {/* Red accent bar */}
+            <div className="h-1 bg-red-500" />
+
+            <div className="px-6 pt-6 pb-5">
+              {/* Icon + heading */}
+              <div className="flex flex-col items-center text-center mb-5">
+                <div className="w-14 h-14 rounded-full bg-red-50 border-2 border-red-200 flex items-center justify-center mb-3">
+                  <FiTrash2 className="text-red-500" size={24} />
+                </div>
+                <h3 className="font-serif text-xl text-[#0B1F2A]">Delete Account?</h3>
+                <p className="mt-2 text-sm text-gray-500 leading-relaxed">
+                  This will permanently delete your account and all of the following:
+                </p>
+              </div>
+
+              {/* What gets deleted */}
+              <ul className="space-y-1.5 mb-5">
+                {[
+                  "All room bookings",
+                  "Event hall bookings",
+                  "Table reservations",
+                  "Invoices & payment records",
+                  "Reviews & feedback",
+                  "Notifications",
+                ].map((item) => (
+                  <li key={item} className="flex items-center gap-2 text-sm text-gray-600">
+                    <span className="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+
+              <p className="text-xs text-red-600 font-medium bg-red-50 border border-red-100 rounded-lg px-3 py-2 mb-5">
+                This action is permanent and cannot be undone.
+              </p>
+
+              {/* Buttons */}
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={handleDeleteAccount}
+                  disabled={delLoading}
+                  className="w-full inline-flex items-center justify-center gap-2 bg-red-600 text-white text-sm font-semibold px-5 py-3 rounded-xl hover:bg-red-700 transition-colors disabled:opacity-60 active:scale-[.98]"
+                >
+                  {delLoading
+                    ? <><Spinner size="sm" color="white" /> Deleting…</>
+                    : <><FiTrash2 size={14} /> Yes, Delete My Account</>}
+                </button>
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  disabled={delLoading}
+                  className="w-full border border-gray-200 text-[#0B1F2A] text-sm font-semibold px-5 py-3 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-40 active:scale-[.98]"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

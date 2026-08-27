@@ -21,6 +21,7 @@ import eventHallsReducer         from './slice/eventHalls/eventHallSlice';
 import eventHallBookingsReducer  from './slice/eventHallBookings/eventHallBookingSlice';
 import passwordResetReducer      from './slice/auth/passwordResetSlice';
 import changePasswordReducer     from './slice/auth/changePasswordSlice';
+import deleteAccountReducer      from './slice/auth/deleteAccountSlice';
 
 export const store = configureStore({
   reducer: {
@@ -46,5 +47,6 @@ export const store = configureStore({
     eventHallBookings:  eventHallBookingsReducer,
     passwordReset:      passwordResetReducer,
     changePassword:     changePasswordReducer,
+    deleteAccount:      deleteAccountReducer,
   },
 });
