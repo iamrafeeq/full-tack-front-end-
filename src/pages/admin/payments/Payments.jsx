@@ -163,8 +163,8 @@ export default function AdminPayments() {
 
                       {/* Guest */}
                       <td className="px-4 py-3">
-                        <p className="font-medium text-[#0B1F2A]">{payment.guest?.name || "—"}</p>
-                        <p className="text-xs text-gray-400">{payment.guest?.email || ""}</p>
+                        <p className="font-medium text-[#0B1F2A]">{payment.booking?.guest?.name || "—"}</p>
+                        <p className="text-xs text-gray-400">{payment.booking?.guest?.email || ""}</p>
                       </td>
 
                       {/* Room & Dates */}
